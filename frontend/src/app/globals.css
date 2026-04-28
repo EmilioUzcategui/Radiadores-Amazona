@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+@theme {
+  /* Tus colores personalizados */
+  --color-on-secondary-fixed: #1a1f25;
+  --color-on-primary-container: #120b00;
+  --color-on-secondary-container: #eef1f5;
+  --color-outline: #7f8892;
+  --color-on-tertiary-fixed: #161719;
+  --color-error-container: #93000a;
+  --color-tertiary-fixed: #ffffff;
+  --color-on-surface-variant: #c8ced6;
+  --color-surface-container: #171a1f;
+  --color-secondary: #dfe3e8;
+  --color-surface-container-low: #111317;
+  --color-on-error: #690005;
+  --color-surface-bright: #343b44;
+  --color-on-tertiary: #1a1a1a;
+  --color-surface-variant: #2b3139;
+  --color-surface-container-high: #1f242a;
+  --color-secondary-container: #4f5863;
+  --color-primary-container: #ff6f00;
+  --color-on-tertiary-fixed-variant: #44484d;
+  --color-on-secondary: #1d2329;
+  --color-tertiary-fixed-dim: #d9dce0;
+  --color-secondary-fixed-dim: #c7ced6;
+  --color-inverse-primary: #ffb562;
+  --color-inverse-surface: #e7eaee;
+  --color-on-surface: #f5f5f5;
+  --color-surface-container-lowest: #020202;
+  --color-on-primary-fixed-variant: #7a4200;
+  --color-primary: #ff8a00;
+  --color-error: #ffb4ab;
+  --color-on-primary-fixed: #311c00;
+  --color-secondary-fixed: #eef1f5;
+  --color-primary-fixed-dim: #ffad4d;
+  --color-outline-variant: #4a525c;
+  --color-surface-container-highest: #262c33;
+  --color-tertiary: #f5f5f5;
+  --color-inverse-on-surface: #252b31;
+  --color-on-tertiary-container: #222326;
+  --color-background: #050505;
+  --color-tertiary-container: #d7d7d7;
+  --color-primary-fixed: #ffcf99;
+  --color-on-secondary-fixed-variant: #3b434d;
+  --color-on-primary: #1a1200;
+  --color-surface-tint: #ff8a00;
+  --color-surface-dim: #050505;
+  --color-surface: #0a0b0d;
+  --color-on-error-container: #ffdad6;
+  --color-on-background: #f5f5f5;
+
+  /* Tus fuentes personalizadas conectadas a next/font */
+  --font-headline: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-label: var(--font-inter), sans-serif;
+}
+
+/* Clases utilitarias de Radiadores Amazona */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.thermal-gradient {
+  background: linear-gradient(135deg, #ff9a1f 0%, #ff6f00 100%);
+}
+
+.radiator-grid {
+  background-size: 20px 20px;
+  background-image: radial-gradient(circle, #343b44 1px, transparent 1px);
+}
+
+.glass-panel {
+  backdrop-filter: blur(20px);
+  background-color: rgba(23, 26, 31, 0.68);
+}
+
+/* Tema visual para n8n chat */
+:root {
+  /* Colors */
+  --chat--color--primary: #ff8a00;
+  --chat--color--primary-shade-50: #ff6f00;
+  --chat--color--primary--shade-100: #7a4200;
+  --chat--color--secondary: #ffffff;
+  --chat--color-secondary-shade-50: #ffffff;
+  --chat--color-white: #f5f5f5;
+  --chat--color-light: #ffffff;
+  --chat--color-light-shade-50: #ffffff;
+  --chat--color-light-shade-100: #7f8892;
+  --chat--color-medium: #c8ced6;
+  --chat--color-dark: #0a0b0d;
+  --chat--color-disabled: #7f8892;
+  --chat--color-typing: #c8ced6;
+
+  /* Base Layout */
+  --chat--spacing: 1rem;
+  --chat--border-radius: 0.25rem;
+  --chat--transition-duration: 0.15s;
+  --chat--font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+    'Helvetica Neue', sans-serif;
+
+  /* Window Dimensions */
+  --chat--window--width: 400px;
+  --chat--window--height: 600px;
+  --chat--window--bottom: var(--chat--spacing);
+  --chat--window--right: var(--chat--spacing);
+  --chat--window--z-index: 9999;
+  --chat--window--border: 1px solid var(--color-outline-variant);
+  --chat--window--border-radius: var(--chat--border-radius);
+  --chat--window--margin-bottom: var(--chat--spacing);
+
+  /* Header Styles */
+  --chat--header-height: auto;
+  --chat--header--padding: var(--chat--spacing);
+  --chat--header--background: var(--chat--color-dark);
+  --chat--header--color: var(--chat--color-light);
+  --chat--header--border-top: none;
+  --chat--header--border-bottom: none;
+  --chat--header--border-left: none;
+  --chat--header--border-right: none;
+  --chat--heading--font-size: 2em;
+  --chat--subtitle--font-size: inherit;
+  --chat--subtitle--line-height: 1.8;
+
+  /* Message Styles */
+  --chat--message--font-size: 1rem;
+  --chat--message--padding: var(--chat--spacing);
+  --chat--message--border-radius: var(--chat--border-radius);
+  --chat--message-line-height: 1.5;
+  --chat--message--margin-bottom: calc(var(--chat--spacing) * 1);
+  --chat--message--bot--background: var(--color-surface-container-high);
+  --chat--message--bot--color: var(--color-on-surface);
+  --chat--message--bot--border: 1px solid var(--color-outline-variant);
+  --chat--message--user--background: var(--color-primary);
+  --chat--message--user--color: var(--color-on-primary);
+  --chat--message--user--border: none;
+  --chat--message--pre--background: var(--color-surface-container-highest);
+  --chat--messages-list--padding: var(--chat--spacing);
+
+  /* Toggle Button */
+  --chat--toggle--size: 64px;
+  --chat--toggle--width: var(--chat--toggle--size);
+  --chat--toggle--height: var(--chat--toggle--size);
+  --chat--toggle--border-radius: 50%;
+  --chat--toggle--background: var(--chat--color--primary);
+  --chat--toggle--hover--background: var(--chat--color--primary-shade-50);
+  --chat--toggle--active--background: var(--chat--color--primary--shade-100);
+  --chat--toggle--color: var(--color-on-primary);
+
+  /* Input Area */
+  --chat--textarea--height: 50px;
+  --chat--textarea--max-height: 30rem;
+  --chat--input--font-size: inherit;
+  --chat--input--border: 0;
+  --chat--input--border-radius: 0;
+  --chat--input--padding: 0.8rem;
+  --chat--input--background: var(--color-surface-container-high);
+  --chat--input--text-color: var(--color-on-surface);
+  --chat--input--line-height: 1.5;
+  --chat--input--placeholder--font-size: var(--chat--input--font-size);
+  --chat--input--border-active: 0;
+  --chat--input--left--panel--width: 2rem;
+
+  /* Button Styles */
+  --chat--button--padding: calc(var(--chat--spacing) * 5 / 8) var(--chat--spacing);
+  --chat--button--border-radius: var(--chat--border-radius);
+  --chat--button--font-size: 1rem;
+  --chat--button--line-height: 1;
+  --chat--button--color--primary: var(--chat--color-light);
+  --chat--button--background--primary: var(--color-primary);
+  --chat--button--border--primary: none;
+  --chat--button--color--primary--hover: var(--color-on-primary);
+  --chat--button--background--primary--hover: var(--color-primary-container);
+  --chat--button--border--primary--hover: none;
+  --chat--button--color--primary--disabled: var(--color-on-surface-variant);
+  --chat--button--background--primary--disabled: var(--color-surface-container-highest);
+  --chat--button--border--primary--disabled: none;
+  --chat--button--color--secondary: var(--color-on-surface);
+  --chat--button--background--secondary: var(--color-surface-container-highest);
+  --chat--button--border--secondary: none;
+  --chat--button--color--secondary--hover: var(--color-on-surface);
+  --chat--button--background--secondary--hover: var(--color-surface-bright);
+  --chat--button--border--secondary--hover: none;
+  --chat--button--color--secondary--disabled: var(--color-on-surface-variant);
+  --chat--button--background--secondary--disabled: var(--color-surface-container-highest);
+  --chat--button--border--secondary--disabled: none;
+  --chat--close--button--color-hover: var(--color-primary);
+
+  /* Send and File Buttons */
+  --chat--input--send--button--background: var(--color-surface-container-highest);
+  --chat--input--send--button--color: var(--color-primary);
+  --chat--input--send--button--background-hover: var(--color-primary-container);
+  --chat--input--send--button--color-hover: var(--color-on-primary);
+  --chat--input--file--button--background: var(--color-surface-container-highest);
+  --chat--input--file--button--color: var(--color-on-surface);
+  --chat--input--file--button--background-hover: var(--chat--input--file--button--background);
+  --chat--input--file--button--color-hover: var(--color-primary);
+  --chat--files-spacing: 0.25rem;
+
+  /* Body and Footer */
+  --chat--body--background: var(--color-surface-container-low);
+  --chat--footer--background: var(--color-surface-container-low);
+  --chat--footer--color: var(--color-on-surface);
+}

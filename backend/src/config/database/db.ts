@@ -1,0 +1,42 @@
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+
+// Aseguramos que las variables de entorno estén cargadas
+dotenv.config();
+
+// Inicializamos el Pool de conexiones
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT || '5432'),
+
+    // Opciones recomendadas para producción
+    max: 20, // Número máximo de clientes en el pool
+    idleTimeoutMillis: 30000, // Cierra clientes inactivos después de 30 segundos
+    connectionTimeoutMillis: 2000, // Tiempo máximo esperando conexión
+});
+
+// Listener para monitorear errores inesperados en el pool
+pool.on('error', (err, client) => {
+    console.error('Error inesperado en el cliente de la base de datos', err);
+    process.exit(-1);
+});
+
+/**
+ * Función genérica para ejecutar consultas SQL con parámetros seguros
+ * y evitar inyecciones SQL.
+ */
+export const query = async (text: string, params?: any[]) => {
+    const start = Date.now();
+    const res = await pool.query(text, params);
+    const duration = Date.now() - start;
+
+    // Opcional: Console.log para debuggear cuánto tardan tus consultas
+    // console.log('Consulta ejecutada', { text, duration, rows: res.rowCount });
+
+    return res;
+};
+
+export default pool;
