@@ -279,13 +279,13 @@ export const DashBoard = () => {
 						const isCritical = item.metricas.nivel_urgencia === "CRÍTICA";
 
 						return (
-								<button
-									type="button"
-									key={item.sku}
-									onClick={() => setSelectedItem(item)}
-									className="border border-outline-variant bg-surface-container p-5 flex flex-col justify-between text-left cursor-pointer hover:border-primary/70 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-								>
-									<div>
+							<button
+								type="button"
+								key={item.sku}
+								onClick={() => setSelectedItem(item)}
+								className="border border-outline-variant bg-surface-container p-5 flex flex-col justify-between text-left cursor-pointer hover:border-primary/70 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+							>
+								<div>
 									<div className="flex justify-between items-start mb-4">
 										<h3 className="font-headline text-xl font-black tracking-tighter">{item.sku}</h3>
 										<span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-sm ${isCritical ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-surface-container-highest text-on-surface-variant'}`}>
