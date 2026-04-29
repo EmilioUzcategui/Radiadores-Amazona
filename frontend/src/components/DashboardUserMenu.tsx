@@ -6,6 +6,21 @@ import { useEffect, useRef, useState } from "react";
 import { setAuthToken } from "../../lib/api";
 import { useAuthStore } from "@/store/authStore";
 
+const THEME_STORAGE_KEY = "ra-theme";
+type ThemeMode = "dark" | "light";
+
+function applyThemeMode(mode: ThemeMode) {
+    const root = document.documentElement;
+    if (mode === "light") {
+        root.classList.add("theme-light");
+        root.style.colorScheme = "light";
+        return;
+    }
+
+    root.classList.remove("theme-light");
+    root.style.colorScheme = "dark";
+}
+
 type MenuItem = {
     key: string;
     label: string;
@@ -90,6 +105,11 @@ export const DashboardUserMenu = () => {
 
     const [isOpen, setIsOpen] = useState(false);
     const [lastAction, setLastAction] = useState("");
+    const [activeModalKey, setActiveModalKey] = useState<string | null>(null);
+    const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+        if (typeof window === "undefined") return "dark";
+        return window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
+    });
     const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -101,6 +121,7 @@ export const DashboardUserMenu = () => {
 
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
+                setActiveModalKey(null);
                 setIsOpen(false);
             }
         };
@@ -114,6 +135,23 @@ export const DashboardUserMenu = () => {
         };
     }, []);
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+        applyThemeMode(themeMode);
+    }, [themeMode]);
+
+    const activeModalItem = activeModalKey ? menuItems.find((item) => item.key === activeModalKey) : null;
+
+    const openModal = (key: string) => {
+        setActiveModalKey(key);
+        setIsOpen(false);
+    };
+
+    const closeModal = () => {
+        setActiveModalKey(null);
+    };
+
     const handleItemClick = (key: string, label: string) => {
         if (key === "logout") {
             setLogout();
@@ -124,7 +162,7 @@ export const DashboardUserMenu = () => {
         }
 
         setLastAction(`Accion mock ejecutada: ${label}`);
-        setIsOpen(false);
+        openModal(key);
     };
 
     return (
@@ -207,6 +245,154 @@ export const DashboardUserMenu = () => {
                             {lastAction}
                         </p>
                     )}
+                </div>
+            )}
+
+            {activeModalItem && (
+                <div
+                    className="fixed inset-0 z-50 p-4 md:p-8"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={activeModalItem.label}
+                    onMouseDown={closeModal}
+                >
+                    <div className="absolute inset-0 bg-background/80" />
+
+                    <div className="relative w-full h-full flex items-start md:items-center justify-center">
+                        <div
+                            className="w-full max-w-2xl border border-outline-variant bg-surface-container shadow-none max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-4rem)] flex flex-col"
+                            onMouseDown={(event) => event.stopPropagation()}
+                        >
+                            <header className="px-5 md:px-6 py-4 border-b border-outline-variant flex items-start justify-between gap-4 sticky top-0 bg-surface-container">
+                                <div>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Cuenta</p>
+                                    <h3 className="font-headline text-2xl md:text-3xl font-black tracking-tighter uppercase">
+                                        {activeModalItem.label}
+                                    </h3>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    className="px-3 py-2 border border-outline-variant text-xs uppercase tracking-widest font-semibold text-on-surface hover:border-primary/70 hover:text-primary transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                            </header>
+
+                            <div className="p-5 md:p-6 space-y-6 overflow-y-auto">
+                                {activeModalKey === "profile" && (
+                                    <section className="border border-outline-variant bg-surface-container-low p-4">
+                                        <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Perfil</p>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-on-surface-variant">Nombre</span>
+                                                <span className="text-on-surface font-semibold">
+                                                    {authUser ? `${authUser.names} ${authUser.last_names}` : "Usuario"}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-on-surface-variant">Correo</span>
+                                                <span className="text-on-surface font-semibold">{authUser?.email ?? "Sin correo"}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-on-surface-variant">Rol</span>
+                                                <span className="text-on-surface font-semibold">Administrador (mock)</span>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {activeModalKey === "settings" && (
+                                    <section className="border border-outline-variant bg-surface-container-low p-4">
+                                        <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Preferencias</p>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div>
+                                                    <p className="text-on-surface font-semibold">Modo claro</p>
+                                                    <p className="text-xs text-on-surface-variant mt-1">Cambia el tema del dashboard (mock)</p>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setThemeMode((prev) => (prev === "light" ? "dark" : "light"))}
+                                                    className={`min-w-28 px-3 py-2 border text-xs uppercase tracking-widest font-semibold transition-colors ${themeMode === "light"
+                                                        ? "border-primary bg-primary-container/20 text-primary"
+                                                        : "border-outline-variant text-on-surface hover:border-primary/70 hover:text-primary"
+                                                        }`}
+                                                    aria-pressed={themeMode === "light"}
+                                                >
+                                                    {themeMode === "light" ? "Activado" : "Desactivado"}
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Moneda</span>
+                                                <span className="text-on-surface font-semibold">USD (mock)</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Zona horaria</span>
+                                                <span className="text-on-surface font-semibold">America/Caracas (mock)</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Notificaciones</span>
+                                                <span className="text-on-surface font-semibold">Activadas (mock)</span>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {activeModalKey === "notifications" && (
+                                    <section className="border border-outline-variant bg-surface-container-low p-4">
+                                        <div className="flex items-end justify-between gap-4 mb-3">
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">Alertas</p>
+                                                <h4 className="font-headline text-lg font-black tracking-tight uppercase">Notificaciones</h4>
+                                            </div>
+                                            <p className="text-xs uppercase tracking-widest text-on-surface-variant">Mock</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {[
+                                                { title: "Stock crítico", detail: "RAD-TOY-001 por debajo del mínimo", date: "2026-04-28" },
+                                                { title: "Oportunidad de arbitraje", detail: "RAD-TOY-002 con diferencial alto", date: "2026-04-26" },
+                                                { title: "Nuevo lead", detail: "Consulta vía WhatsApp por RAD-CHEV-042", date: "2026-04-24" },
+                                            ].map((notif) => (
+                                                <div key={`${notif.title}-${notif.date}`} className="border border-outline-variant bg-surface-container p-4">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <p className="font-headline text-sm font-black uppercase tracking-wider text-on-surface">
+                                                            {notif.title}
+                                                        </p>
+                                                        <p className="text-xs uppercase tracking-widest text-on-surface-variant">{notif.date}</p>
+                                                    </div>
+                                                    <p className="text-sm text-on-surface-variant mt-2">{notif.detail}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+
+                                {activeModalKey === "help" && (
+                                    <section className="border border-outline-variant bg-surface-container-low p-4">
+                                        <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Soporte</p>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Canal recomendado</span>
+                                                <span className="text-on-surface font-semibold">WhatsApp (mock)</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Horario</span>
+                                                <span className="text-on-surface font-semibold">9:00 a.m. - 5:00 p.m. (mock)</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-on-surface-variant">Correo</span>
+                                                <span className="text-on-surface font-semibold">soporte@radiadoresamazona.com (mock)</span>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

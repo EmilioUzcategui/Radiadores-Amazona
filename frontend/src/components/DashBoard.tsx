@@ -1,6 +1,59 @@
 'use client';
 
 import { useState } from 'react';
+import { InventoryActionModal, type InventoryDrillDownDetails } from './InventoryActionModal';
+
+type PredictiveItem = (typeof predictiveData.analisis_predictivo)[number];
+
+type InquiryRow = {
+	fecha: string;
+	cliente: string;
+	canal: string;
+	cantidad?: number;
+};
+
+function generateCompetitorPricesUSD30d(sku: string) {
+	const seed = sku.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+	const base = 80 + (seed % 70);
+	const volatility = 2 + (seed % 4);
+
+	return Array.from({ length: 30 }, (_, index) => {
+		const weekWave = Math.sin((index / 7) * Math.PI * 2) * volatility;
+		const drift = (index - 15) * 0.05;
+		const value = base + weekWave + drift;
+		return Number(value.toFixed(2));
+	});
+}
+
+const inquiriesMockBySku: Record<string, InquiryRow[]> = {
+	'RAD-TOY-001': [
+		{ fecha: '2026-04-28', cliente: 'Minería Andina', canal: 'WhatsApp', cantidad: 2 },
+		{ fecha: '2026-04-26', cliente: 'Translog Norte', canal: 'Llamada', cantidad: 1 },
+		{ fecha: '2026-04-24', cliente: 'Agrofrío S.A.', canal: 'Instagram', cantidad: 1 },
+		{ fecha: '2026-04-22', cliente: 'Planta Delta', canal: 'Web', cantidad: 3 },
+		{ fecha: '2026-04-20', cliente: 'Taller Rápido', canal: 'WhatsApp', cantidad: 1 },
+		{ fecha: '2026-04-18', cliente: 'Repuestos Central', canal: 'Web', cantidad: 2 },
+	],
+	'RAD-CHEV-042': [
+		{ fecha: '2026-04-27', cliente: 'Taller La Estrella', canal: 'WhatsApp', cantidad: 1 },
+		{ fecha: '2026-04-23', cliente: 'Repuestos Express', canal: 'Web', cantidad: 1 },
+		{ fecha: '2026-04-19', cliente: 'Transporte Ávila', canal: 'Llamada', cantidad: 2 },
+	],
+	'RAD-TOY-002': [
+		{ fecha: '2026-04-25', cliente: 'Agrofrío S.A.', canal: 'Web', cantidad: 1 },
+		{ fecha: '2026-04-21', cliente: 'Tienda El Motor', canal: 'Instagram', cantidad: 1 },
+		{ fecha: '2026-04-17', cliente: 'Minería Andina', canal: 'Llamada', cantidad: 1 },
+	],
+};
+
+function getInventoryDrillDownDetails(sku: string): InventoryDrillDownDetails {
+	return {
+		precioCompetenciaUSD30d: generateCompetitorPricesUSD30d(sku),
+		consultasClientes: inquiriesMockBySku[sku] ?? [
+			{ fecha: '2026-04-28', cliente: 'Cliente demo', canal: 'Web', cantidad: 1 },
+		],
+	};
+}
 
 // --- DATA MOCK ORIGINAL ---
 const metrics = [
@@ -91,6 +144,7 @@ const predictiveData = {
 export const DashBoard = () => {
 	const itemsPerPage = 3;
 	const [currentPage, setCurrentPage] = useState(1);
+	const [selectedItem, setSelectedItem] = useState<PredictiveItem | null>(null);
 
 	const totalPages = Math.max(1, Math.ceil(predictiveData.analisis_predictivo.length / itemsPerPage));
 	const paginatedPredictiveData = predictiveData.analisis_predictivo.slice(
@@ -225,8 +279,13 @@ export const DashBoard = () => {
 						const isCritical = item.metricas.nivel_urgencia === "CRÍTICA";
 
 						return (
-							<article key={item.sku} className="border border-outline-variant bg-surface-container p-5 flex flex-col justify-between">
-								<div>
+								<button
+									type="button"
+									key={item.sku}
+									onClick={() => setSelectedItem(item)}
+									className="border border-outline-variant bg-surface-container p-5 flex flex-col justify-between text-left cursor-pointer hover:border-primary/70 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+								>
+									<div>
 									<div className="flex justify-between items-start mb-4">
 										<h3 className="font-headline text-xl font-black tracking-tighter">{item.sku}</h3>
 										<span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-sm ${isCritical ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-surface-container-highest text-on-surface-variant'}`}>
@@ -260,7 +319,7 @@ export const DashBoard = () => {
 										</p>
 									</div>
 								</div>
-							</article>
+							</button>
 						);
 					})}
 				</div>
@@ -310,6 +369,17 @@ export const DashBoard = () => {
 					</div>
 				</div>
 			</section>
+
+			{selectedItem && (
+				<InventoryActionModal
+					isOpen={Boolean(selectedItem)}
+					sku={selectedItem.sku}
+					urgencia={selectedItem.metricas.nivel_urgencia}
+					razonamiento={selectedItem.recomendacion.razonamiento_comercial}
+					detalles={getInventoryDrillDownDetails(selectedItem.sku)}
+					onClose={() => setSelectedItem(null)}
+				/>
+			)}
 
 			{/* TABLA PIPELINE ORIGINAL */}
 			<section className="border border-outline-variant bg-surface-container-low overflow-hidden">

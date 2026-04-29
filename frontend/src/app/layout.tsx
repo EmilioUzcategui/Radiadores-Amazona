@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import "@n8n/chat/style.css";
 import "./globals.css";
 import { AppNavBar } from "../components/AppNavBar";
+import { ThemeInitializer } from "../components/ThemeInitializer";
 
 // 1. Configuramos la fuente Inter (para los textos generales)
 const inter = Inter({
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body
         className="bg-surface text-on-surface font-body overflow-x-hidden antialiased"
       >
+        <ThemeInitializer />
         <AppNavBar />
 
         {/* Aquí es donde Next.js inserta el contenido de page.tsx */}
