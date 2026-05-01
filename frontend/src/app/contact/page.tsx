@@ -5,18 +5,18 @@ import { FormEvent, useState } from "react";
 const contactChannels = [
     {
         label: "Línea comercial",
-        value: "+57 300 000 0000",
+        value: "+58 412-4373856",
         note: "Cotizaciones, disponibilidad y tiempos de entrega.",
     },
     {
         label: "Correo corporativo",
-        value: "ventas@radiadoresamazona.com",
+        value: "radiadoresamazona@gmail.com",
         note: "Atención para clientes, distribuidores y alianzas comerciales.",
     },
     {
         label: "Horario de atención",
-        value: "Lunes a sábado · 7:30 AM - 6:00 PM",
-        note: "Soporte técnico, pedidos y seguimiento postventa.",
+        value: "Lunes a viernes de 8:00 a.m. a 5:00 p.m. los sábados y domingos de 8:00 a.m. a 1:00 p.m.",
+        note: "Pedidos y seguimiento postventa.",
     },
 ];
 
@@ -119,7 +119,7 @@ export default function ContactPage() {
                                     name="phone"
                                     type="tel"
                                     autoComplete="tel"
-                                    placeholder="+57 300 123 4567"
+                                    placeholder="+58 414-1234567"
                                     className="w-full rounded-xl border border-surface-bright bg-surface px-4 py-3 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/60"
                                 />
                             </div>

@@ -47,9 +47,9 @@ export const LandingFooter = () => {
                             Contacto rápido
                         </p>
                         <ul className="mt-4 space-y-2 text-on-surface-variant">
-                            <li>+57 300 000 0000</li>
-                            <li>ventas@radiadoresamazona.com</li>
-                            <li>Lunes a sábado · 7:30 AM - 6:00 PM</li>
+                            <li>+58 412-4373856</li>
+                            <li>radiadoresamazona@gmail.com</li>
+                            <li>Lunes a viernes de 8:00 a.m. a 5:00 p.m. los sábados y domingos de 8:00 a.m. a 1:00 p.m</li>
                         </ul>
                     </div>
                 </div>

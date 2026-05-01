@@ -8,10 +8,10 @@ export const NavBar = () => {
     const pathname = usePathname();
 
     const navItems = [
-        { href: "/", label: "HOME" },
-        { href: "/products", label: "PRODUCTS" },
-        { href: "/about", label: "ABOUT" },
-        { href: "/contact", label: "CONTACT" },
+        { href: "/", label: "INICIO" },
+        { href: "/products", label: "PRODUCTOS" },
+        { href: "/about", label: "ACERCA DE" },
+        { href: "/contact", label: "CONTACTO" },
     ];
 
     const isActiveRoute = (href: string) => {
