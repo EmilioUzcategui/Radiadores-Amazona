@@ -29,10 +29,16 @@ export type InventoryDrillDownDetails = {
     consultasClientes: Inquiry[];
 };
 
+// 1. ACTUALIZAMOS LOS PROPS PARA RECIBIR LAS NUEVAS MÉTRICAS
 type Props = {
     isOpen: boolean;
     sku: string;
     urgencia: string;
+    alertaCompetitividad: string | null;
+    oportunidadArbitraje: number | null;
+    indiceRentabilidad: string | null;
+    accionSugerida: string;
+    cantidadSugerida: number;
     razonamiento: string;
     detalles: InventoryDrillDownDetails;
     onClose: () => void;
@@ -55,7 +61,19 @@ function readThemeColors(): ThemeColors {
     };
 }
 
-export function InventoryActionModal({ isOpen, sku, urgencia, razonamiento, detalles, onClose }: Props) {
+export function InventoryActionModal({
+    isOpen,
+    sku,
+    urgencia,
+    alertaCompetitividad,
+    oportunidadArbitraje,
+    indiceRentabilidad,
+    accionSugerida,
+    cantidadSugerida,
+    razonamiento,
+    detalles,
+    onClose
+}: Props) {
     const themeColors = useMemo(() => {
         if (!isOpen) return null;
         return readThemeColors();
@@ -136,6 +154,12 @@ export function InventoryActionModal({ isOpen, sku, urgencia, razonamiento, deta
 
     if (!isOpen) return null;
 
+    // Lógica de colores para rentabilidad
+    const rentabilidadColor =
+        indiceRentabilidad === 'ALTO' ? 'text-green-500' :
+            indiceRentabilidad === 'MEDIO' ? 'text-yellow-500' :
+                indiceRentabilidad === 'BAJO' ? 'text-red-400' : 'text-on-surface-variant';
+
     return (
         <div
             className="fixed inset-0 z-50 p-4 md:p-8"
@@ -151,14 +175,15 @@ export function InventoryActionModal({ isOpen, sku, urgencia, razonamiento, deta
                     className="w-full max-w-4xl border border-outline-variant bg-surface-container shadow-none max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-4rem)] flex flex-col"
                     onMouseDown={(event) => event.stopPropagation()}
                 >
-                    <header className="px-5 md:px-6 py-4 border-b border-outline-variant flex items-start justify-between gap-4 sticky top-0 bg-surface-container">
+                    {/* CABECERA */}
+                    <header className="px-5 md:px-6 py-4 border-b border-outline-variant flex items-start justify-between gap-4 sticky top-0 bg-surface-container z-10">
                         <div>
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Drill-down</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Drill-down Predictivo</p>
                             <h3 className="font-headline text-2xl md:text-3xl font-black tracking-tighter uppercase">
                                 {sku}
                             </h3>
                             <p className="text-xs uppercase tracking-widest text-on-surface-variant mt-2">
-                                Urgencia: <span className="text-on-surface font-semibold">{urgencia}</span>
+                                Urgencia: <span className={`font-bold ${urgencia === 'CRÍTICA' ? 'text-red-500' : 'text-on-surface'}`}>{urgencia}</span>
                             </p>
                         </div>
 
@@ -172,8 +197,41 @@ export function InventoryActionModal({ isOpen, sku, urgencia, razonamiento, deta
                     </header>
 
                     <div className="p-5 md:p-6 space-y-6 overflow-y-auto">
+
+                        {/* NUEVO: CUADRÍCULA DE KPIS FINANCIEROS Y DE ACCIÓN */}
+                        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="border border-outline-variant bg-surface-container-low p-4 flex flex-col justify-center">
+                                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Arbitraje USD</p>
+                                <p className="text-2xl font-black text-primary">
+                                    {oportunidadArbitraje ? `$${oportunidadArbitraje}` : 'N/D'}
+                                </p>
+                            </div>
+
+                            <div className="border border-outline-variant bg-surface-container-low p-4 flex flex-col justify-center">
+                                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Rentabilidad</p>
+                                <p className={`text-xl font-black uppercase tracking-tight ${rentabilidadColor}`}>
+                                    {indiceRentabilidad || 'N/D'}
+                                </p>
+                            </div>
+
+                            <div className="border border-outline-variant bg-surface-container-low p-4 flex flex-col justify-center">
+                                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Alerta Competitiva</p>
+                                <p className="text-sm font-bold text-on-surface uppercase leading-tight line-clamp-2" title={alertaCompetitividad?.replace(/_/g, ' ')}>
+                                    {alertaCompetitividad?.replace(/_/g, ' ') || 'SIN ALERTA'}
+                                </p>
+                            </div>
+
+                            <div className="border border-outline-variant bg-surface-container-low p-4 flex flex-col justify-center border-l-4 border-l-primary">
+                                <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Sugerencia AI</p>
+                                <p className="text-sm font-bold text-on-surface uppercase leading-tight">
+                                    {accionSugerida.replace(/_/g, ' ')}
+                                    {cantidadSugerida > 0 && <span className="block text-primary mt-1">{cantidadSugerida} un.</span>}
+                                </p>
+                            </div>
+                        </section>
+
                         <section className="border border-outline-variant bg-surface-container-low p-4">
-                            <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Razonamiento (completo)</p>
+                            <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Razonamiento Comercial (IA)</p>
                             <p className="text-sm text-on-surface-variant leading-relaxed">{razonamiento}</p>
                         </section>
 

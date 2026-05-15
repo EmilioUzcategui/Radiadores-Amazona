@@ -6,14 +6,14 @@ const PREDICTION_WEBHOOK_URL =
 
 export const startMetricsJob = () => {
     cron.schedule("* * * * *", async () => {
-        try {
-            const response = await axios.get(PREDICTION_WEBHOOK_URL);
+        // try {
+        //     const response = await axios.get(PREDICTION_WEBHOOK_URL);
 
-            console.log("[metrics.job] Prediction API response:", response.data);
-        } catch (error) {
-            console.error("[metrics.job] Error calling prediction API:", error);
-        }
+        //     console.log("[metrics.job] Prediction API response:", response.data);
+        // } catch (error) {
+        //     console.error("[metrics.job] Error calling prediction API:", error);
+        // }
     });
 
-    console.log("[metrics.job] Scheduled to run every minute.");
+    // console.log("[metrics.job] Scheduled to run every minute.");
 };

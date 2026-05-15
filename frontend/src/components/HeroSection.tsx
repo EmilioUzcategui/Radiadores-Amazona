@@ -4,38 +4,55 @@ import { useEffect } from 'react';
 import '@n8n/chat/style.css';
 import { createChat } from '@n8n/chat';
 
+const N8N_CHAT_CONTAINER_ID = 'n8n-chat';
+const N8N_CHAT_WINDOW_KEY = '__raN8nChatInit__';
+
 export const HeroSection = () => {
 
     useEffect(() => {
-        // 1. Doble seguro: Si no estamos en el navegador, no hagas nada
         if (typeof window === 'undefined') return;
 
-        if (document.querySelector('#n8n-chat')) {
+        const win = window as Window & { [N8N_CHAT_WINDOW_KEY]?: boolean };
+        if (win[N8N_CHAT_WINDOW_KEY]) return;
+
+        if (document.getElementById(N8N_CHAT_CONTAINER_ID)) {
+            win[N8N_CHAT_WINDOW_KEY] = true;
             return;
         }
 
-        // 2. IMPORTACIÓN DINÁMICA: Solo se carga en el cliente
-        import('@n8n/chat').then(({ createChat }) => {
-            createChat({
-                webhookUrl: 'https://n8n.srv1038201.hstgr.cloud/webhook/2fb8489a-b1c4-42a6-aedf-544f0fb1c08f/chat',
-                showWelcomeScreen: true,
-                initialMessages: [
-                    'Hola, bienvenido a Radiadores Amazona.',
-                    'Estoy listo para ayudarte con productos, precios y soporte técnico.',
-                ],
-                i18n: {
-                    en: {
-                        title: 'Asesor Virtual',
-                        subtitle: 'Atención informativa 24/7 para tu operación.',
-                        footer: '',
-                        getStarted: 'Iniciar chat',
-                        inputPlaceholder: 'Escribe tu consulta...',
-                        closeButtonTooltip: 'Cerrar chat',
-                    },
-                },
-            });
-        }).catch(err => console.error("Error cargando el chat de n8n:", err));
+        let isActive = true;
+        win[N8N_CHAT_WINDOW_KEY] = true;
 
+        import('@n8n/chat')
+            .then(({ createChat }) => {
+                if (!isActive) return;
+                createChat({
+                    webhookUrl: 'https://n8n.srv1038201.hstgr.cloud/webhook/2fb8489a-b1c4-42a6-aedf-544f0fb1c08f/chat',
+                    showWelcomeScreen: true,
+                    initialMessages: [
+                        'Hola, bienvenido a Radiadores Amazona.',
+                        'Estoy listo para ayudarte con productos, precios y soporte técnico.',
+                    ],
+                    i18n: {
+                        en: {
+                            title: 'Asesor Virtual',
+                            subtitle: 'Atención informativa 24/7 para tu operación.',
+                            footer: '',
+                            getStarted: 'Iniciar chat',
+                            inputPlaceholder: 'Escribe tu consulta...',
+                            closeButtonTooltip: 'Cerrar chat',
+                        },
+                    },
+                });
+            })
+            .catch(err => console.error("Error cargando el chat de n8n:", err));
+
+        return () => {
+            isActive = false;
+            const container = document.getElementById(N8N_CHAT_CONTAINER_ID);
+            if (container) container.remove();
+            win[N8N_CHAT_WINDOW_KEY] = false;
+        };
     }, []);
     return (
         <div>

@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import usersRouter from "./src/modules/auth/users/users.route";
+import metricsRouter from "./src/modules/metrics/metrics.route";
 import { startMetricsJob } from "./src/jobs/metrics.job";
 
 const app = express();
@@ -34,6 +35,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 });
 
 app.use("/api/users", usersRouter);
+app.use("/api/metrics", metricsRouter);
 
 app.use((_req: Request, res: Response) => {
     res.status(404).json({

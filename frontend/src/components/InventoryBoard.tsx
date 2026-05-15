@@ -1,3 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { InventoryItemModal, type InventoryItem } from "./InventoryItemModal";
+
 const inventory = [
     { producto: 'Radiador Industrial R-800', categoria: 'Aluminio', stock: 42, estado: 'Disponible', tone: 'text-primary' },
     { producto: 'Intercambiador HX-21', categoria: 'Acero', stock: 7, estado: 'Stock Bajo', tone: 'text-amber-300' },
@@ -5,7 +10,32 @@ const inventory = [
     { producto: 'Módulo Ventilación V-12', categoria: 'Componentes', stock: 0, estado: 'Agotado', tone: 'text-red-300' },
 ];
 
+function generateStockHistory30d(producto: string, currentStock: number) {
+    const seed = producto.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    let value = Math.max(0, currentStock + ((seed % 7) - 3));
+    const volatility = 1 + (seed % 3);
+
+    const series: number[] = [];
+    for (let i = 0; i < 30; i += 1) {
+        const wave = Math.sin((i / 7) * Math.PI * 2) * volatility;
+        const shock = ((seed + i * 13) % 5) - 2;
+        value = Math.max(0, Math.round(value + wave + shock * 0.15));
+        series.push(value);
+    }
+
+    // Asegura que el último punto refleje el stock actual (mock pero consistente)
+    series[series.length - 1] = Math.max(0, currentStock);
+    return series;
+}
+
 export const InventoryBoard = () => {
+    const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+
+    const historialStock30d = useMemo(() => {
+        if (!selectedItem) return [];
+        return generateStockHistory30d(selectedItem.producto, selectedItem.stock);
+    }, [selectedItem]);
+
     return (
         <section className="space-y-8">
             <header className="border border-outline-variant bg-surface-container-low p-6 md:p-8">
@@ -38,7 +68,19 @@ export const InventoryBoard = () => {
                             </thead>
                             <tbody>
                                 {inventory.map((item) => (
-                                    <tr key={item.producto} className="border-t border-outline-variant/60">
+                                    <tr
+                                        key={item.producto}
+                                        className="border-t border-outline-variant/60 cursor-pointer hover:bg-surface-container-highest/40 transition-colors"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => setSelectedItem({ producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado })}
+                                        onKeyDown={(event) => {
+                                            if (event.key === "Enter" || event.key === " ") {
+                                                event.preventDefault();
+                                                setSelectedItem({ producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado });
+                                            }
+                                        }}
+                                    >
                                         <td className="px-5 md:px-6 py-4 text-on-surface">{item.producto}</td>
                                         <td className="px-5 md:px-6 py-4 text-on-surface-variant">{item.categoria}</td>
                                         <td className="px-5 md:px-6 py-4 text-primary font-bold">{item.stock}</td>
@@ -50,6 +92,15 @@ export const InventoryBoard = () => {
                     </div>
                 )}
             </section>
+
+            {selectedItem && (
+                <InventoryItemModal
+                    isOpen={Boolean(selectedItem)}
+                    item={selectedItem}
+                    historialStock30d={historialStock30d}
+                    onClose={() => setSelectedItem(null)}
+                />
+            )}
         </section>
     );
 };

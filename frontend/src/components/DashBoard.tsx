@@ -58,9 +58,9 @@ function getInventoryDrillDownDetails(sku: string): InventoryDrillDownDetails {
 // --- DATA MOCK ORIGINAL ---
 const metrics = [
 	{ label: 'Ventas del Mes', value: '$128.400', trend: '+12.8%' },
-	{ label: 'Leads Activos', value: '86', trend: '+6.1%' },
-	{ label: 'Tasa de Conversión', value: '24.5%', trend: '+2.3%' },
-	{ label: 'Tickets Abiertos', value: '14', trend: '-8.4%' },
+	{ label: 'Interacciones del chatbot', value: '86', trend: '+6.1%' },
+	{ label: 'SKUs en Riesgo Crítico', value: '8', trend: '+2.3%' },
+	{ label: 'Oportunidades de Arbitraje', value: '14', trend: '-8.4%' },
 ];
 
 const opportunities = [
@@ -98,12 +98,17 @@ const customerSegmentation = {
 	],
 };
 
-// --- NUEVA DATA MOCK DEL AGENTE N8N ---
+// --- NUEVA DATA MOCK DEL AGENTE N8N ACTUALIZADA ---
 const predictiveData = {
 	analisis_predictivo: [
 		{
 			sku: "RAD-TOY-001",
-			metricas: { nivel_urgencia: "CRÍTICA", oportunidad_arbitraje_usd: 50, indice_rentabilidad_importacion: "ALTO" },
+			metricas: {
+				nivel_urgencia: "CRÍTICA",
+				oportunidad_arbitraje_usd: 50,
+				indice_rentabilidad_importacion: "ALTO",
+				alerta_competitividad: "PRECIO_LOCAL_DESFASADO"
+			},
 			recomendacion: {
 				accion_sugerida: "IMPORTAR_INMEDIATO",
 				cantidad_sugerida_comprar: 5,
@@ -112,16 +117,26 @@ const predictiveData = {
 		},
 		{
 			sku: "RAD-TOYdd-001",
-			metricas: { nivel_urgencia: "CRÍTICA", oportunidad_arbitraje_usd: 50, indice_rentabilidad_importacion: "ALTO" },
+			metricas: {
+				nivel_urgencia: "CRÍTICA",
+				oportunidad_arbitraje_usd: 45,
+				indice_rentabilidad_importacion: "ALTO",
+				alerta_competitividad: "RIESGO_PERDIDA_VENTAS"
+			},
 			recomendacion: {
 				accion_sugerida: "IMPORTAR_INMEDIATO",
 				cantidad_sugerida_comprar: 5,
-				razonamiento_comercial: "El stock actual está por debajo del mínimo, y existe una alta oportunidad de arbitraje de $50.00 por unidad. El MOQ del proveedor coincide con nuestra necesidad mínima de stock, haciendo la importación inmediata rentable y urgente."
+				razonamiento_comercial: "El stock actual está por debajo del mínimo, y existe una alta oportunidad de arbitraje. El MOQ del proveedor coincide con nuestra necesidad."
 			}
 		},
 		{
 			sku: "RAD-CHEV-042",
-			metricas: { nivel_urgencia: "BAJA", oportunidad_arbitraje_usd: 6, indice_rentabilidad_importacion: "BAJO" },
+			metricas: {
+				nivel_urgencia: "BAJA",
+				oportunidad_arbitraje_usd: 6,
+				indice_rentabilidad_importacion: "BAJO",
+				alerta_competitividad: "COMPETITIVO"
+			},
 			recomendacion: {
 				accion_sugerida: "MANTENER_INVENTARIO",
 				cantidad_sugerida_comprar: 0,
@@ -130,7 +145,12 @@ const predictiveData = {
 		},
 		{
 			sku: "RAD-TOY-002",
-			metricas: { nivel_urgencia: "BAJA", oportunidad_arbitraje_usd: 80, indice_rentabilidad_importacion: "BAJO" },
+			metricas: {
+				nivel_urgencia: "BAJA",
+				oportunidad_arbitraje_usd: 80,
+				indice_rentabilidad_importacion: "MEDIO",
+				alerta_competitividad: "MARGEN_MEJORABLE"
+			},
 			recomendacion: {
 				accion_sugerida: "RENEGOCIAR_CON_PROVEEDOR_LOCAL",
 				cantidad_sugerida_comprar: 0,
@@ -177,81 +197,6 @@ export const DashBoard = () => {
 				))}
 			</div>
 
-			<section className="border border-outline-variant bg-surface-container-low p-6 md:p-8 space-y-6">
-				<div>
-					<p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant mb-3">Analítica de Clientes</p>
-					<h2 className="font-headline text-2xl md:text-3xl font-black tracking-tighter uppercase">
-						Métricas de Demanda y Segmentación
-					</h2>
-				</div>
-
-				<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-					{customerBehaviorMetrics.map((metric) => (
-						<article key={metric.label} className="border border-outline-variant bg-surface-container p-5">
-							<p className="text-[11px] uppercase tracking-widest text-on-surface-variant">{metric.label}</p>
-							<p className="font-headline text-xl md:text-2xl font-black tracking-tighter mt-3 leading-tight">
-								{metric.value}
-							</p>
-						</article>
-					))}
-				</div>
-
-				<div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
-					<article className="border border-outline-variant bg-surface-container p-5 space-y-4">
-						<h3 className="font-headline text-lg font-black tracking-tight uppercase">Clientes por Estado</h3>
-						<div className="space-y-3">
-							{customerSegmentation.ubicacionPorEstado.map((item) => (
-								<div key={item.estado} className="space-y-1">
-									<div className="flex items-center justify-between text-sm">
-										<span className="text-on-surface-variant">{item.estado}</span>
-										<span className="text-on-surface font-semibold">{item.clientes}</span>
-									</div>
-									<div className="h-2 bg-surface-container-highest overflow-hidden">
-										<div
-											className="h-full bg-primary"
-											style={{ width: `${(item.clientes / maxEstadoClientes) * 100}%` }}
-										/>
-									</div>
-								</div>
-							))}
-						</div>
-					</article>
-
-					<article className="border border-outline-variant bg-surface-container p-5 space-y-4">
-						<h3 className="font-headline text-lg font-black tracking-tight uppercase">Tipo de Persona</h3>
-						<div className="space-y-3">
-							{customerSegmentation.tipoPersona.map((item) => (
-								<div key={item.tipo} className="space-y-1">
-									<div className="flex items-center justify-between text-sm">
-										<span className="text-on-surface-variant">{item.tipo}</span>
-										<span className="text-on-surface font-semibold">{item.porcentaje}%</span>
-									</div>
-									<div className="h-2 bg-surface-container-highest overflow-hidden">
-										<div className="h-full bg-primary" style={{ width: `${item.porcentaje}%` }} />
-									</div>
-								</div>
-							))}
-						</div>
-					</article>
-
-					<article className="border border-outline-variant bg-surface-container p-5 space-y-4">
-						<h3 className="font-headline text-lg font-black tracking-tight uppercase">Perfil de Cliente</h3>
-						<div className="space-y-3">
-							{customerSegmentation.perfilCliente.map((item) => (
-								<div key={item.categoria} className="space-y-1">
-									<div className="flex items-center justify-between text-sm">
-										<span className="text-on-surface-variant">{item.categoria}</span>
-										<span className="text-on-surface font-semibold">{item.porcentaje}%</span>
-									</div>
-									<div className="h-2 bg-surface-container-highest overflow-hidden">
-										<div className="h-full bg-primary" style={{ width: `${item.porcentaje}%` }} />
-									</div>
-								</div>
-							))}
-						</div>
-					</article>
-				</div>
-			</section>
 
 			{/* NUEVO: RESUMEN EJECUTIVO AI */}
 			<section className="border border-outline-variant bg-surface-container-low p-6 md:p-8 border-l-4 border-l-primary relative overflow-hidden">
@@ -277,6 +222,9 @@ export const DashBoard = () => {
 				<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
 					{paginatedPredictiveData.map((item) => {
 						const isCritical = item.metricas.nivel_urgencia === "CRÍTICA";
+						const rentabilidadColor =
+							item.metricas.indice_rentabilidad_importacion === 'ALTO' ? 'text-green-500' :
+								item.metricas.indice_rentabilidad_importacion === 'MEDIO' ? 'text-yellow-500' : 'text-red-400';
 
 						return (
 							<button
@@ -293,6 +241,7 @@ export const DashBoard = () => {
 										</span>
 									</div>
 
+									{/* SECCIÓN ACTUALIZADA DE MÉTRICAS */}
 									<div className="space-y-3 mb-5 border-y border-outline-variant/40 py-4">
 										<div className="flex justify-between items-center text-sm">
 											<span className="text-on-surface-variant">Acción Sugerida:</span>
@@ -300,21 +249,37 @@ export const DashBoard = () => {
 												{item.recomendacion.accion_sugerida.replace(/_/g, ' ')}
 											</span>
 										</div>
+
+										<div className="flex justify-between items-center text-sm">
+											<span className="text-on-surface-variant">Índice Rentabilidad:</span>
+											<span className={`font-bold text-xs uppercase tracking-wider ${rentabilidadColor}`}>
+												{item.metricas.indice_rentabilidad_importacion || 'N/D'}
+											</span>
+										</div>
+
+										<div className="flex justify-between items-center text-sm">
+											<span className="text-on-surface-variant">Alerta Competitiva:</span>
+											<span className="text-on-surface font-semibold text-xs uppercase tracking-wider text-right max-w-[140px] truncate" title={item.metricas.alerta_competitividad?.replace(/_/g, ' ')}>
+												{item.metricas.alerta_competitividad?.replace(/_/g, ' ') || 'SIN ALERTA'}
+											</span>
+										</div>
+
 										<div className="flex justify-between items-center text-sm">
 											<span className="text-on-surface-variant">Arbitraje Detectado:</span>
 											<span className="text-primary font-bold">${item.metricas.oportunidad_arbitraje_usd} USD</span>
 										</div>
+
 										{item.recomendacion.cantidad_sugerida_comprar > 0 && (
-											<div className="flex justify-between items-center text-sm">
+											<div className="flex justify-between items-center text-sm mt-2 pt-2 border-t border-outline-variant/20">
 												<span className="text-on-surface-variant">Cantidad Recomendada:</span>
-												<span className="text-on-surface font-semibold">{item.recomendacion.cantidad_sugerida_comprar} un.</span>
+												<span className="text-on-surface font-black text-base">{item.recomendacion.cantidad_sugerida_comprar} un.</span>
 											</div>
 										)}
 									</div>
 
 									<div>
 										<p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Razonamiento</p>
-										<p className="text-sm text-on-surface-variant leading-relaxed">
+										<p className="text-sm text-on-surface-variant leading-relaxed line-clamp-3">
 											{item.recomendacion.razonamiento_comercial}
 										</p>
 									</div>
@@ -375,39 +340,18 @@ export const DashBoard = () => {
 					isOpen={Boolean(selectedItem)}
 					sku={selectedItem.sku}
 					urgencia={selectedItem.metricas.nivel_urgencia}
+					alertaCompetitividad={selectedItem.metricas.alerta_competitividad}
+					oportunidadArbitraje={selectedItem.metricas.oportunidad_arbitraje_usd}
+					indiceRentabilidad={selectedItem.metricas.indice_rentabilidad_importacion}
+					accionSugerida={selectedItem.recomendacion.accion_sugerida}
+					cantidadSugerida={selectedItem.recomendacion.cantidad_sugerida_comprar}
 					razonamiento={selectedItem.recomendacion.razonamiento_comercial}
 					detalles={getInventoryDrillDownDetails(selectedItem.sku)}
 					onClose={() => setSelectedItem(null)}
 				/>
 			)}
 
-			{/* TABLA PIPELINE ORIGINAL */}
-			<section className="border border-outline-variant bg-surface-container-low overflow-hidden">
-				<div className="px-5 md:px-6 py-4 border-b border-outline-variant">
-					<h2 className="font-headline text-2xl font-black tracking-tighter uppercase">Pipeline de Oportunidades</h2>
-				</div>
 
-				<div className="overflow-x-auto">
-					<table className="w-full min-w-[560px]">
-						<thead>
-							<tr className="text-left text-xs uppercase tracking-widest text-on-surface-variant">
-								<th className="px-5 md:px-6 py-4">Cliente</th>
-								<th className="px-5 md:px-6 py-4">Etapa</th>
-								<th className="px-5 md:px-6 py-4">Monto</th>
-							</tr>
-						</thead>
-						<tbody>
-							{opportunities.map((item) => (
-								<tr key={item.cliente} className="border-t border-outline-variant/60">
-									<td className="px-5 md:px-6 py-4 text-on-surface">{item.cliente}</td>
-									<td className="px-5 md:px-6 py-4 text-on-surface-variant">{item.etapa}</td>
-									<td className="px-5 md:px-6 py-4 text-primary font-bold">{item.monto}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			</section>
 		</section>
 	);
 };
