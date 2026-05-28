@@ -9,7 +9,7 @@ export const SideBar = () => {
 	const links = [
 		{ href: '/dashboard', label: 'Métricas' },
 		{ href: '/dashboard/inventario', label: 'Inventario' },
-		{ href: '/dashboard/clientes', label: 'Clientes' },
+		{ href: '/dashboard/clientes', label: 'chats' },
 	];
 
 	const isActiveLink = (href: string) => {

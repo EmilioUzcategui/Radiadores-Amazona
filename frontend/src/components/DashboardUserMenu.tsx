@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { setAuthToken } from "../../lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { usersService } from "../../services/auth/users.service";
 
 const THEME_STORAGE_KEY = "ra-theme";
 type ThemeMode = "dark" | "light";
@@ -101,11 +102,21 @@ const menuItems: MenuItem[] = [
 export const DashboardUserMenu = () => {
     const router = useRouter();
     const setLogout = useAuthStore((state) => state.setLogout);
+    const setLogin = useAuthStore((state) => state.setLogin);
+    const setUser = useAuthStore((state) => state.setUser);
     const authUser = useAuthStore((state) => state.user);
 
     const [isOpen, setIsOpen] = useState(false);
     const [lastAction, setLastAction] = useState("");
     const [activeModalKey, setActiveModalKey] = useState<string | null>(null);
+    const [profileForm, setProfileForm] = useState({
+        names: "",
+        last_names: "",
+        email: "",
+    });
+    const [profileError, setProfileError] = useState<string | null>(null);
+    const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
         if (typeof window === "undefined") return "dark";
         return window.localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
@@ -141,6 +152,17 @@ export const DashboardUserMenu = () => {
         applyThemeMode(themeMode);
     }, [themeMode]);
 
+    useEffect(() => {
+        if (activeModalKey !== "profile") return;
+        setProfileForm({
+            names: authUser?.names ?? "",
+            last_names: authUser?.last_names ?? "",
+            email: authUser?.email ?? "",
+        });
+        setProfileError(null);
+        setProfileSuccess(null);
+    }, [activeModalKey, authUser]);
+
     const activeModalItem = activeModalKey ? menuItems.find((item) => item.key === activeModalKey) : null;
 
     const openModal = (key: string) => {
@@ -161,8 +183,85 @@ export const DashboardUserMenu = () => {
             return;
         }
 
-        setLastAction(`Accion mock ejecutada: ${label}`);
+        setLastAction(`Accion  ejecutada: ${label}`);
         openModal(key);
+    };
+
+    const handleProfileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = event.target;
+        const field = name as keyof typeof profileForm;
+        setProfileForm((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+    };
+
+    const handleProfileSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setProfileError(null);
+        setProfileSuccess(null);
+
+        if (!authUser) {
+            setProfileError("No hay usuario autenticado");
+            return;
+        }
+
+        const payload: {
+            names?: string;
+            last_names?: string;
+            email?: string;
+        } = {};
+        const trimmedNames = profileForm.names.trim();
+        const trimmedLastNames = profileForm.last_names.trim();
+        const trimmedEmail = profileForm.email.trim();
+
+        if (trimmedNames && trimmedNames !== authUser.names) {
+            payload.names = trimmedNames;
+        }
+        if (trimmedLastNames && trimmedLastNames !== authUser.last_names) {
+            payload.last_names = trimmedLastNames;
+        }
+        if (trimmedEmail && trimmedEmail !== authUser.email) {
+            payload.email = trimmedEmail;
+        }
+
+        if (Object.keys(payload).length === 0) {
+            setProfileSuccess("No hay cambios para guardar");
+            return;
+        }
+
+        try {
+            setIsSavingProfile(true);
+            const response = await usersService.updateProfile(payload);
+
+            if (!response.success || !response.data) {
+                throw new Error(response.message || "No se pudo actualizar el perfil");
+            }
+
+            const updatedUser = {
+                id: response.data.id,
+                email: response.data.email,
+                names: response.data.names,
+                last_names: response.data.last_names,
+            };
+
+            if (response.token) {
+                setAuthToken(response.token);
+                setLogin(response.token, updatedUser);
+            } else {
+                setUser(updatedUser);
+            }
+
+            setProfileSuccess("Perfil actualizado correctamente");
+            setLastAction("Perfil actualizado");
+        } catch (error) {
+            const message = error instanceof Error
+                ? error.message
+                : "No se pudo actualizar el perfil";
+            setProfileError(message);
+        } finally {
+            setIsSavingProfile(false);
+        }
     };
 
     return (
@@ -284,22 +383,63 @@ export const DashboardUserMenu = () => {
                                 {activeModalKey === "profile" && (
                                     <section className="border border-outline-variant bg-surface-container-low p-4">
                                         <p className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">Perfil</p>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-on-surface-variant">Nombre</span>
-                                                <span className="text-on-surface font-semibold">
-                                                    {authUser ? `${authUser.names} ${authUser.last_names}` : "Usuario"}
-                                                </span>
+                                        <form className="space-y-4" onSubmit={handleProfileSubmit}>
+                                            <div className="grid gap-4">
+                                                <label className="text-xs uppercase tracking-widest text-on-surface-variant">
+                                                    Nombre
+                                                    <input
+                                                        name="names"
+                                                        type="text"
+                                                        value={profileForm.names}
+                                                        onChange={handleProfileChange}
+                                                        required
+                                                        className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                                                    />
+                                                </label>
+                                                <label className="text-xs uppercase tracking-widest text-on-surface-variant">
+                                                    Apellidos
+                                                    <input
+                                                        name="last_names"
+                                                        type="text"
+                                                        value={profileForm.last_names}
+                                                        onChange={handleProfileChange}
+                                                        required
+                                                        className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                                                    />
+                                                </label>
+                                                <label className="text-xs uppercase tracking-widest text-on-surface-variant">
+                                                    Correo
+                                                    <input
+                                                        name="email"
+                                                        type="email"
+                                                        value={profileForm.email}
+                                                        onChange={handleProfileChange}
+                                                        required
+                                                        className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                                                    />
+                                                </label>
                                             </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-on-surface-variant">Correo</span>
-                                                <span className="text-on-surface font-semibold">{authUser?.email ?? "Sin correo"}</span>
+
+                                            {profileError ? (
+                                                <p className="text-xs text-[#ff9b94]">{profileError}</p>
+                                            ) : null}
+                                            {profileSuccess ? (
+                                                <p className="text-xs text-primary">{profileSuccess}</p>
+                                            ) : null}
+
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="text-xs text-on-surface-variant">
+                                                    Rol: <span className="text-on-surface">Administrador</span>
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSavingProfile}
+                                                    className="px-3 py-2 border border-outline-variant text-xs uppercase tracking-widest font-semibold text-on-surface disabled:opacity-60 hover:border-primary/70 hover:text-primary transition-colors"
+                                                >
+                                                    {isSavingProfile ? "Guardando..." : "Guardar cambios"}
+                                                </button>
                                             </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-on-surface-variant">Rol</span>
-                                                <span className="text-on-surface font-semibold">Administrador (mock)</span>
-                                            </div>
-                                        </div>
+                                        </form>
                                     </section>
                                 )}
 
@@ -310,7 +450,7 @@ export const DashboardUserMenu = () => {
                                             <div className="flex items-center justify-between gap-4">
                                                 <div>
                                                     <p className="text-on-surface font-semibold">Modo claro</p>
-                                                    <p className="text-xs text-on-surface-variant mt-1">Cambia el tema del dashboard (mock)</p>
+                                                    <p className="text-xs text-on-surface-variant mt-1">Cambia el tema del dashboard ()</p>
                                                 </div>
 
                                                 <button
@@ -327,15 +467,15 @@ export const DashboardUserMenu = () => {
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Moneda</span>
-                                                <span className="text-on-surface font-semibold">USD (mock)</span>
+                                                <span className="text-on-surface font-semibold">USD ()</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Zona horaria</span>
-                                                <span className="text-on-surface font-semibold">America/Caracas (mock)</span>
+                                                <span className="text-on-surface font-semibold">America/Caracas ()</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Notificaciones</span>
-                                                <span className="text-on-surface font-semibold">Activadas (mock)</span>
+                                                <span className="text-on-surface font-semibold">Activadas ()</span>
                                             </div>
                                         </div>
                                     </section>
@@ -377,15 +517,15 @@ export const DashboardUserMenu = () => {
                                         <div className="space-y-3 text-sm">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Canal recomendado</span>
-                                                <span className="text-on-surface font-semibold">WhatsApp (mock)</span>
+                                                <span className="text-on-surface font-semibold">WhatsApp ()</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Horario</span>
-                                                <span className="text-on-surface font-semibold">9:00 a.m. - 5:00 p.m. (mock)</span>
+                                                <span className="text-on-surface font-semibold">9:00 a.m. - 5:00 p.m. ()</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-on-surface-variant">Correo</span>
-                                                <span className="text-on-surface font-semibold">soporte@radiadoresamazona.com (mock)</span>
+                                                <span className="text-on-surface font-semibold">soporte@radiadoresamazona.com ()</span>
                                             </div>
                                         </div>
                                     </section>

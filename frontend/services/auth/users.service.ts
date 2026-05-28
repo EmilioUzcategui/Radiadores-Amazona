@@ -36,6 +36,24 @@ type ResetPasswordResponse = {
     message: string;
 };
 
+export type UpdateProfilePayload = {
+    names?: string;
+    last_names?: string;
+    email?: string;
+};
+
+type UpdateProfileResponse = {
+    success: boolean;
+    message: string;
+    token?: string;
+    data?: {
+        id: string;
+        email: string;
+        names: string;
+        last_names: string;
+    };
+};
+
 const getErrorMessage = (error: unknown, fallbackMessage: string) => {
     if (
         typeof error === "object" &&
@@ -117,6 +135,18 @@ export const usersService = {
             console.error("Error al restablecer contraseña:", error);
             throw new Error(
                 getErrorMessage(error, "Error al restablecer contraseña")
+            );
+        }
+    },
+    async updateProfile(payload: UpdateProfilePayload): Promise<UpdateProfileResponse> {
+        try {
+            const response = await api.put("/api/users/me", payload);
+            return response.data;
+        }
+        catch (error: unknown) {
+            console.error("Error al actualizar perfil:", error);
+            throw new Error(
+                getErrorMessage(error, "Error al actualizar el perfil")
             );
         }
     },

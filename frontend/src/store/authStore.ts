@@ -16,6 +16,7 @@ interface AuthState {
 
     // Acciones
     setLogin: (token: string, user: AuthUser) => void;
+    setUser: (user: AuthUser) => void;
     setLogout: () => void;
 }
 
@@ -34,6 +35,12 @@ export const useAuthStore = create<AuthState>()(
                 user,
                 isAuthenticated: true
             }),
+
+            setUser: (user) => set((state) => ({
+                ...state,
+                user,
+                isAuthenticated: Boolean(state.token),
+            })),
 
             // Acción para cerrar sesión (borra todo)
             setLogout: () => set({

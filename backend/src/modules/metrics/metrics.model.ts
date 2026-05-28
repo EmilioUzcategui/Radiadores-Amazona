@@ -1,26 +1,26 @@
 import { query } from "../../config/database/db";
-import type {
-	ConversationalMetricWithHistory,
-	GetConversationalMetricsQuery,
-} from "./metrics.schema";
+import type { ChatHistory, GetConversationalMetricsQuery } from "./metrics.schema";
 
-type DbConversationalMetricRow = {
-	metric_id: string | number;
-	metric_session_id: string;
-	historial_chat_id: number | null;
-	intencion_principal: string | null;
-	producto_mencionado: string | null;
-	marca_vehiculo_mencionado: string | null;
-	fecha_interaccion: string | Date | null;
-	chat_id: number | null;
-	chat_session_id: string | null;
+type DbChatHistoryRow = {
+	id: number;
+	session_id: string;
 	message: Record<string, unknown> | string | null;
 	fecha_hora: string | Date | null;
 	tipo_emisor: string | null;
 	procesado_analitica: boolean | null;
 };
 
-const parseJsonMessage = (value: DbConversationalMetricRow["message"]):
+// Definimos el tipo de respuesta para el frontend
+export type DashboardSummaryMetrics = {
+	producto_mas_preguntado: string | null;
+	categoria_mas_preguntada: string | null;
+	radiador_menos_preguntado: string | null;
+	categoria_menos_preguntada: string | null;
+	hora_mas_trafico: string | null;
+	hora_menos_trafico: string | null;
+};
+
+const parseJsonMessage = (value: DbChatHistoryRow["message"]):
 	| Record<string, unknown>
 	| null => {
 	if (!value) {
@@ -38,47 +38,48 @@ const parseJsonMessage = (value: DbConversationalMetricRow["message"]):
 	return value;
 };
 
-const mapConversationalMetric = (
-	row: DbConversationalMetricRow,
-): ConversationalMetricWithHistory => {
+const sanitizeHumanMessage = (
+	message: Record<string, unknown> | null,
+): Record<string, unknown> | null => {
+	if (!message) {
+		return null;
+	}
+
+	const content = typeof message.content === "string" ? message.content : null;
+	if (!content) {
+		return message;
+	}
+
+	const markerMatch = /el cliente dice:\s*/i.exec(content);
+	if (!markerMatch) {
+		return message;
+	}
+
+	const trimmedContent = content.slice(markerMatch.index + markerMatch[0].length).trim();
+	return { ...message, content: trimmedContent };
+};
+
+const mapChatHistory = (row: DbChatHistoryRow): ChatHistory => {
 	return {
-		id: String(row.metric_id),
-		session_id: row.metric_session_id,
-		historial_chat_id: row.historial_chat_id,
-		intencion_principal: row.intencion_principal,
-		producto_mencionado: row.producto_mencionado,
-		marca_vehiculo_mencionado: row.marca_vehiculo_mencionado,
-		fecha_interaccion: row.fecha_interaccion ? new Date(row.fecha_interaccion) : null,
-		chat_history: row.chat_id
-			? {
-				  id: row.chat_id,
-				  session_id: row.chat_session_id ?? row.metric_session_id,
-				  message: parseJsonMessage(row.message),
-				  fecha_hora: row.fecha_hora ? new Date(row.fecha_hora) : null,
-				  tipo_emisor: row.tipo_emisor,
-				  procesado_analitica: row.procesado_analitica,
-			  }
-			: null,
+		id: row.id,
+		session_id: row.session_id,
+		message: sanitizeHumanMessage(parseJsonMessage(row.message)),
+		fecha_hora: row.fecha_hora ? new Date(row.fecha_hora) : null,
+		tipo_emisor: row.tipo_emisor,
+		procesado_analitica: row.procesado_analitica,
 	};
 };
 
 const baseConversationalMetricsQuery = `
 	SELECT
-		m.id AS metric_id,
-		m.session_id AS metric_session_id,
-		m.historial_chat_id,
-		m.intencion_principal,
-		m.producto_mencionado,
-		m.marca_vehiculo_mencionado,
-		m.fecha_interaccion,
-		h.id AS chat_id,
-		h.session_id AS chat_session_id,
+		h.id,
+		h.session_id,
 		h.message,
 		h.fecha_hora,
 		h.tipo_emisor,
 		h.procesado_analitica
-	FROM metricas_conversacionales m
-	LEFT JOIN n8n_chat_histories h ON h.id = m.historial_chat_id
+	FROM n8n_chat_histories h
+	WHERE h.message ->> 'type' = 'human'
 `;
 
 const buildPagination = (params?: GetConversationalMetricsQuery) => {
@@ -100,12 +101,158 @@ const buildPagination = (params?: GetConversationalMetricsQuery) => {
 
 export const getConversationalMetricsModel = async (
 	params?: GetConversationalMetricsQuery,
-): Promise<ConversationalMetricWithHistory[]> => {
+): Promise<ChatHistory[]> => {
 	const { clause, values } = buildPagination(params);
 	const result = await query(
-		`${baseConversationalMetricsQuery} ORDER BY m.fecha_interaccion DESC${clause}`,
+		`${baseConversationalMetricsQuery} ORDER BY h.fecha_hora DESC${clause}`,
 		values,
 	);
 
-	return result.rows.map((row) => mapConversationalMetric(row as DbConversationalMetricRow));
+	return result.rows.map((row) => mapChatHistory(row as DbChatHistoryRow));
+};
+
+export const getDashboardSummaryMetricsModel = async (): Promise<DashboardSummaryMetrics> => {
+	// 1. Producto más preguntado
+	const mostAskedProductRes = await query(`
+        SELECT producto_mencionado
+        FROM metricas_conversacionales
+        WHERE producto_mencionado IS NOT NULL
+        GROUP BY producto_mencionado
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    `);
+
+	// 2. Producto menos preguntado
+	const leastAskedProductRes = await query(`
+        SELECT producto_mencionado
+        FROM metricas_conversacionales
+        WHERE producto_mencionado IS NOT NULL
+        GROUP BY producto_mencionado
+        ORDER BY COUNT(*) ASC
+        LIMIT 1
+    `);
+
+	// 3. Categoria mas preguntada
+	const mostAskedCategoryRes = await query(`
+		SELECT categoria_mencionada
+		FROM metricas_conversacionales
+		WHERE categoria_mencionada IS NOT NULL
+		GROUP BY categoria_mencionada
+		ORDER BY COUNT(*) DESC
+		LIMIT 1
+	`);
+
+	// 4. Categoria menos preguntada
+	const leastAskedCategoryRes = await query(`
+		SELECT categoria_mencionada
+		FROM metricas_conversacionales
+		WHERE categoria_mencionada IS NOT NULL
+		GROUP BY categoria_mencionada
+		ORDER BY COUNT(*) ASC
+		LIMIT 1
+	`);
+
+	// 5. Hora con más tráfico (Se extrae solo la hora del timestamp)
+	const peakHourRes = await query(`
+        SELECT EXTRACT(HOUR FROM fecha_interaccion) AS hour_of_day
+        FROM metricas_conversacionales
+        WHERE fecha_interaccion IS NOT NULL
+        GROUP BY hour_of_day
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    `);
+
+	// 6. Hora con menos tráfico
+	const lowestHourRes = await query(`
+        SELECT EXTRACT(HOUR FROM fecha_interaccion) AS hour_of_day
+        FROM metricas_conversacionales
+        WHERE fecha_interaccion IS NOT NULL
+        GROUP BY hour_of_day
+        ORDER BY COUNT(*) ASC
+        LIMIT 1
+    `);
+
+	// Función auxiliar para formatear la hora en ventanas de 2 horas (Ej: 10 -> "10:00 - 12:00")
+	const formatHourWindow = (hour: number | string | null | undefined): string | null => {
+		if (hour === null || hour === undefined) return null;
+		const parsedHour = Number(hour);
+		const start = parsedHour.toString().padStart(2, '0');
+		const end = ((parsedHour + 2) % 24).toString().padStart(2, '0'); // Suma 2 horas y maneja medianoche
+		return `${start}:00 - ${end}:00`;
+	};
+
+	return {
+		producto_mas_preguntado: mostAskedProductRes.rows[0]?.producto_mencionado ?? null,
+		radiador_menos_preguntado: leastAskedProductRes.rows[0]?.producto_mencionado ?? null,
+		categoria_mas_preguntada: mostAskedCategoryRes.rows[0]?.categoria_mencionada ?? null,
+		categoria_menos_preguntada: leastAskedCategoryRes.rows[0]?.categoria_mencionada ?? null,
+		hora_mas_trafico: formatHourWindow(peakHourRes.rows[0]?.hour_of_day),
+		hora_menos_trafico: formatHourWindow(lowestHourRes.rows[0]?.hour_of_day),
+	};
+};
+
+export const getChatbotInteractionsCountModel = async (): Promise<number> => {
+	const result = await query(`
+		SELECT COUNT(*)::int AS total
+		FROM metricas_conversacionales
+		WHERE producto_mencionado IS NOT NULL
+			OR categoria_mencionada IS NOT NULL
+			OR intencion_principal IS NOT NULL
+			OR marca_vehiculo_mencionada IS NOT NULL
+	`);
+
+	return Number(result.rows[0]?.total ?? 0);
+};
+
+type InventoryKpis = {
+	critical_skus: number;
+	arbitrage_opportunities: number;
+};
+
+const getArbitrageColumnName = async (): Promise<string> => {
+	const result = await query(
+		`
+			SELECT column_name
+			FROM information_schema.columns
+			WHERE table_name = 'predicciones_comerciales'
+				AND column_name IN ('oportunidad_arbitraje_usd', 'oportunidad_arbitraje')
+			ORDER BY column_name DESC
+			LIMIT 1
+		`,
+	);
+
+	const column = result.rows[0]?.column_name as string | undefined;
+	return column ?? 'oportunidad_arbitraje_usd';
+};
+
+export const getInventoryKpisModel = async (): Promise<InventoryKpis> => {
+	const arbitrageColumn = await getArbitrageColumnName();
+	const result = await query(
+		`
+			SELECT
+				COUNT(*) FILTER (WHERE nivel_urgencia ILIKE 'CRIT%')::int AS critical_skus,
+				COUNT(*) FILTER (
+					WHERE ${arbitrageColumn} IS NOT NULL AND ${arbitrageColumn} > 0
+				)::int AS arbitrage_opportunities
+			FROM predicciones_comerciales
+		`,
+	);
+
+	return {
+		critical_skus: Number(result.rows[0]?.critical_skus ?? 0),
+		arbitrage_opportunities: Number(result.rows[0]?.arbitrage_opportunities ?? 0),
+	};
+};
+
+export const getMonthlySalesModel = async (): Promise<number> => {
+	const result = await query(`
+		SELECT
+			COALESCE(
+				SUM(COALESCE(ventas_promedio_mensual, 0) * COALESCE(precio_venta_usd, 0)),
+				0
+			)::numeric AS total
+		FROM inventario_interno
+	`);
+
+	return Number(result.rows[0]?.total ?? 0);
 };

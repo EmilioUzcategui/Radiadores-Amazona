@@ -208,19 +208,83 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 };
 
-export const getCurrentUser = (req: AuthenticationRequest, res: Response) => {
-    if (!req.user) {
+export const getCurrentUser = async (req: AuthenticationRequest, res: Response) => {
+    if (!req.user?.id) {
         return res.status(401).json({
             success: false,
             message: "No autenticado",
         });
     }
 
+    const userId = String(req.user.id);
+    const user = await getUserByIdModel(userId);
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: "Usuario no encontrado",
+        });
+    }
+
     return res.status(200).json({
         success: true,
-        message: "Token válido",
-        data: req.user,
+        message: "Usuario obtenido correctamente",
+        data: sanitizeUser(user),
     });
+};
+
+export const updateCurrentUser = async (req: AuthenticationRequest, res: Response) => {
+    if (!req.user?.id) {
+        return res.status(401).json({
+            success: false,
+            message: "No autenticado",
+        });
+    }
+
+    try {
+        const payload = updateUserSchema.parse(req.body) as Partial<RegisterUserData> & {
+            status?: boolean;
+        };
+        const userId = String(req.user.id);
+        const updatedUser = await updateUserModel(userId, payload);
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "Usuario no encontrado",
+            });
+        }
+
+        const token = authToken({
+            id: updatedUser.id,
+            email: updatedUser.email,
+            names: updatedUser.names,
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Usuario actualizado correctamente",
+            token,
+            data: sanitizeUser(updatedUser),
+        });
+    } catch (error) {
+        const validationErrorResponse = handleValidationError(res, error);
+        if (validationErrorResponse) {
+            return validationErrorResponse;
+        }
+
+        if (error instanceof Error) {
+            return res.status(409).json({
+                success: false,
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "No se pudo actualizar el usuario",
+        });
+    }
 };
 
 export const requestRecoveryCode = async (req: Request, res: Response) => {

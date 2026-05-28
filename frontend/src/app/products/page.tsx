@@ -97,7 +97,7 @@ export default function ProductsPage() {
                     </span>
 
                     <h1 className="mt-6 font-headline text-4xl md:text-6xl font-black tracking-tighter uppercase leading-[0.95]">
-                        Productos <span className="text-primary">mock</span> para tu landing
+                        Productos
                     </h1>
 
                     <p className="mt-6 text-on-surface-variant text-lg md:text-xl leading-relaxed">

@@ -17,13 +17,12 @@ const pool = new Pool({
     // Opciones recomendadas para producción
     max: 20, // Número máximo de clientes en el pool
     idleTimeoutMillis: 30000, // Cierra clientes inactivos después de 30 segundos
-    connectionTimeoutMillis: 2000, // Tiempo máximo esperando conexión
+    connectionTimeoutMillis: 10000, // Tiempo máximo esperando conexión (Supabase puede tener latencia en arranque en frío)
 });
 
 // Listener para monitorear errores inesperados en el pool
-pool.on('error', (err, client) => {
+pool.on('error', (err) => {
     console.error('Error inesperado en el cliente de la base de datos', err);
-    process.exit(-1);
 });
 
 /**
@@ -32,13 +31,18 @@ pool.on('error', (err, client) => {
  */
 export const query = async (text: string, params?: any[]) => {
     const start = Date.now();
-    const res = await pool.query(text, params);
-    const duration = Date.now() - start;
+    try {
+        const res = await pool.query(text, params);
+        const duration = Date.now() - start;
 
-    // Opcional: Console.log para debuggear cuánto tardan tus consultas
-    // console.log('Consulta ejecutada', { text, duration, rows: res.rowCount });
+        // Opcional: Console.log para debuggear cuánto tardan tus consultas
+        // console.log('Consulta ejecutada', { text, duration, rows: res.rowCount });
 
-    return res;
+        return res;
+    } catch (error) {
+        console.error('Error ejecutando query:', { text, params, error });
+        throw error;
+    }
 };
 
 export default pool;

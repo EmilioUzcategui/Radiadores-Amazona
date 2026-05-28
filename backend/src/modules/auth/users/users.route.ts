@@ -10,6 +10,7 @@ import {
     resetPassword,
     requestRecoveryCode,
     registerUser,
+    updateCurrentUser,
     updateUser,
     verifyRecoveryCode,
 } from "./users.controller";
@@ -22,6 +23,7 @@ usersRouter.post("/request-recovery-code", requestRecoveryCode);
 usersRouter.post("/verify-recovery-code", verifyRecoveryCode);
 usersRouter.post("/reset-password", resetPassword);
 usersRouter.get("/me", verifyAuthToken, getCurrentUser);
+usersRouter.put("/me", verifyAuthToken, updateCurrentUser);
 
 usersRouter.get("/", listUsers);
 usersRouter.get("/:id", getUserById);

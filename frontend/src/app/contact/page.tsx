@@ -32,8 +32,8 @@ export default function ContactPage() {
 
         setStatusMessage(
             name
-                ? `Gracias, ${name}. Recibimos tu solicitud y te contactaremos pronto. (Mock)`
-                : "Recibimos tu solicitud y te contactaremos pronto. (Mock)"
+                ? `Gracias, ${name}. Recibimos tu solicitud y te contactaremos pronto.`
+                : "Recibimos tu solicitud y te contactaremos pronto."
         );
 
         form.reset();
@@ -51,7 +51,7 @@ export default function ContactPage() {
                 </h1>
 
                 <p className="mt-6 max-w-3xl text-on-surface-variant text-lg md:text-xl leading-relaxed">
-                    Esta página mantiene un formulario de contacto mock para pruebas visuales y de
+                    Esta página mantiene un formulario de contacto para pruebas visuales y de
                     experiencia de usuario, sin envío real al backend por ahora.
                 </p>
 
