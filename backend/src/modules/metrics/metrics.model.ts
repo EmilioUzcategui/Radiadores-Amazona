@@ -229,12 +229,24 @@ export const getInventoryKpisModel = async (): Promise<InventoryKpis> => {
 	const arbitrageColumn = await getArbitrageColumnName();
 	const result = await query(
 		`
+			WITH latest AS (
+				SELECT MAX(fecha_analisis) AS fecha
+				FROM predicciones_comerciales
+			)
 			SELECT
-				COUNT(*) FILTER (WHERE nivel_urgencia ILIKE 'CRIT%')::int AS critical_skus,
+				COUNT(*) FILTER (
+					WHERE translate(
+						LOWER(nivel_urgencia),
+						'áéíóúüÁÉÍÓÚÜÑñ',
+						'aeiouuAEIOUUNn'
+					) LIKE 'crit%'
+				)::int AS critical_skus,
 				COUNT(*) FILTER (
 					WHERE ${arbitrageColumn} IS NOT NULL AND ${arbitrageColumn} > 0
 				)::int AS arbitrage_opportunities
 			FROM predicciones_comerciales
+			CROSS JOIN latest
+			WHERE latest.fecha IS NULL OR fecha_analisis = latest.fecha
 		`,
 	);
 

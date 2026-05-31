@@ -33,6 +33,17 @@ export type InventoryResponse = {
     items: InventoryItem[];
 };
 
+export type InventoryHistoryPoint = {
+    dia: string;
+    stock: number | null;
+};
+
+export type InventoryHistoryResponse = {
+    sku: string;
+    days: number;
+    points: InventoryHistoryPoint[];
+};
+
 export type PredictiveInventoryMetrics = {
     sku: string;
     metricas: {

@@ -1,5 +1,7 @@
 import { query } from "../../config/database/db";
 import type {
+    InventoryHistoryPoint,
+    InventoryHistoryResponse,
     InventoryItem,
     InventoryResponse,
     PredictiveInventoryMetrics,
@@ -119,6 +121,56 @@ export const getInventoryModel = async (): Promise<InventoryResponse> => {
     };
 };
 
+type DbHistoryRow = {
+    dia: string | Date;
+    stock: number | string | null;
+};
+
+export const getInventoryHistoryModel = async (
+    sku: string,
+    days: number,
+): Promise<InventoryHistoryResponse> => {
+    const result = await query(
+        `
+        WITH dias AS (
+            SELECT generate_series(
+                (CURRENT_DATE - ($2::int - 1) * INTERVAL '1 day')::date,
+                CURRENT_DATE,
+                INTERVAL '1 day'
+            )::date AS dia
+        ),
+        snapshots AS (
+            SELECT
+                d.dia,
+                (
+                    SELECT h.stock_nuevo
+                    FROM historial_inventario h
+                    WHERE h.producto_sku = $1
+                      AND h.fecha_movimiento::date <= d.dia
+                    ORDER BY h.fecha_movimiento DESC
+                    LIMIT 1
+                ) AS stock
+            FROM dias d
+        )
+        SELECT
+            s.dia,
+            COALESCE(s.stock, i.stock_actual) AS stock
+        FROM snapshots s
+        LEFT JOIN inventario_interno i ON i.producto_sku = $1
+        ORDER BY s.dia ASC
+        `,
+        [sku, days],
+    );
+
+    const rows = result.rows as DbHistoryRow[];
+    const points: InventoryHistoryPoint[] = rows.map((row) => ({
+        dia: row.dia instanceof Date ? row.dia.toISOString().slice(0, 10) : String(row.dia).slice(0, 10),
+        stock: parseOptionalNumber(row.stock),
+    }));
+
+    return { sku, days, points };
+};
+
 const mapPredictiveRow = (row: DbPredictiveRow): PredictiveInventoryMetrics => {
     const rowRecord = row as Record<string, unknown>;
     const opportunityKey = Object.keys(rowRecord).find((key) => key.startsWith("oportunidad_arbitraje"));
@@ -150,9 +202,15 @@ const mapPredictiveRow = (row: DbPredictiveRow): PredictiveInventoryMetrics => {
 
 export const getPredictiveInventoryModel = async (): Promise<PredictiveInventoryResponse> => {
     const result = await query(`
-        SELECT *
-        FROM predicciones_comerciales
-        ORDER BY fecha_analisis DESC NULLS LAST
+        WITH latest AS (
+            SELECT MAX(fecha_analisis) AS fecha
+            FROM predicciones_comerciales
+        )
+        SELECT pc.*
+        FROM predicciones_comerciales pc
+        CROSS JOIN latest
+        WHERE latest.fecha IS NULL OR pc.fecha_analisis = latest.fecha
+        ORDER BY pc.fecha_analisis DESC NULLS LAST
     `);
 
     const rows = result.rows as DbPredictiveRow[];

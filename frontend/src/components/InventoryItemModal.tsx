@@ -17,6 +17,7 @@ import { Line } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
 export type InventoryItem = {
+	sku: string;
 	producto: string;
 	categoria: string;
 	stock: number;
@@ -27,6 +28,9 @@ type Props = {
 	isOpen: boolean;
 	item: InventoryItem;
 	historialStock30d: number[];
+	historialLabels30d: string[];
+	historialLoading: boolean;
+	historialError: string | null;
 	onClose: () => void;
 };
 
@@ -47,7 +51,15 @@ function readThemeColors(): ThemeColors {
 	};
 }
 
-export function InventoryItemModal({ isOpen, item, historialStock30d, onClose }: Props) {
+export function InventoryItemModal({
+	isOpen,
+	item,
+	historialStock30d,
+	historialLabels30d,
+	historialLoading,
+	historialError,
+	onClose,
+}: Props) {
 	useEffect(() => {
 		if (!isOpen) return;
 		const onKeyDown = (event: KeyboardEvent) => {
@@ -62,10 +74,18 @@ export function InventoryItemModal({ isOpen, item, historialStock30d, onClose }:
 		return readThemeColors();
 	}, [isOpen]);
 
-	const labels = useMemo(() => Array.from({ length: 30 }, (_, i) => `D${i + 1}`), []);
+	const labels = useMemo(() => {
+		if (historialLabels30d.length === 0) return [];
+		return historialLabels30d.map((iso) => {
+			const date = new Date(iso);
+			if (Number.isNaN(date.getTime())) return iso;
+			return date.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' });
+		});
+	}, [historialLabels30d]);
 
 	const chartData: ChartData<'line'> | null = useMemo(() => {
 		if (!themeColors) return null;
+		if (historialStock30d.length === 0) return null;
 
 		return {
 			labels,
@@ -126,8 +146,14 @@ export function InventoryItemModal({ isOpen, item, historialStock30d, onClose }:
 		};
 	}, [themeColors]);
 
-	const minStock = useMemo(() => Math.min(...historialStock30d), [historialStock30d]);
-	const maxStock = useMemo(() => Math.max(...historialStock30d), [historialStock30d]);
+	const minStock = useMemo(
+		() => (historialStock30d.length ? Math.min(...historialStock30d) : null),
+		[historialStock30d],
+	);
+	const maxStock = useMemo(
+		() => (historialStock30d.length ? Math.max(...historialStock30d) : null),
+		[historialStock30d],
+	);
 
 	if (!isOpen) return null;
 
@@ -185,8 +211,14 @@ export function InventoryItemModal({ isOpen, item, historialStock30d, onClose }:
 								<div className="border border-outline-variant bg-surface-container p-4">
 									<p className="text-xs uppercase tracking-widest text-on-surface-variant">Rango 30d</p>
 									<p className="text-sm text-on-surface-variant mt-2">
-										<span className="text-on-surface font-semibold">{minStock}</span> min ·{' '}
-										<span className="text-on-surface font-semibold">{maxStock}</span> max
+										{minStock !== null && maxStock !== null ? (
+											<>
+												<span className="text-on-surface font-semibold">{minStock}</span> min ·{' '}
+												<span className="text-on-surface font-semibold">{maxStock}</span> max
+											</>
+										) : (
+											<span>—</span>
+										)}
 									</p>
 								</div>
 							</div>
@@ -198,16 +230,24 @@ export function InventoryItemModal({ isOpen, item, historialStock30d, onClose }:
 									<p className="text-[11px] uppercase tracking-widest text-on-surface-variant">Histórico</p>
 									<h4 className="font-headline text-lg font-black tracking-tight uppercase">Variación último mes</h4>
 								</div>
-								<p className="text-xs uppercase tracking-widest text-on-surface-variant">Mock (30 días)</p>
+								<p className="text-xs uppercase tracking-widest text-on-surface-variant">(30 días)</p>
 							</div>
 
 							<div className="h-56 md:h-64">
-								{chartData && chartOptions ? (
-									<Line data={chartData} options={chartOptions} />
-								) : (
+								{historialError ? (
+									<div className="h-full border border-outline-variant bg-surface-container flex items-center justify-center">
+										<p className="text-xs uppercase tracking-widest text-on-surface-variant">{historialError}</p>
+									</div>
+								) : historialLoading || !chartData || !chartOptions ? (
 									<div className="h-full border border-outline-variant bg-surface-container flex items-center justify-center">
 										<p className="text-xs uppercase tracking-widest text-on-surface-variant">Cargando gráfico…</p>
 									</div>
+								) : historialStock30d.length === 0 ? (
+									<div className="h-full border border-outline-variant bg-surface-container flex items-center justify-center">
+										<p className="text-xs uppercase tracking-widest text-on-surface-variant">Sin movimientos registrados</p>
+									</div>
+								) : (
+									<Line data={chartData} options={chartOptions} />
 								)}
 							</div>
 						</section>

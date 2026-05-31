@@ -241,7 +241,7 @@ export function InventoryActionModal({
                                     <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">Competencia</p>
                                     <h4 className="font-headline text-lg font-black tracking-tight uppercase">Precio último mes</h4>
                                 </div>
-                                <p className="text-xs uppercase tracking-widest text-on-surface-variant">Mock (30 días)</p>
+                                <p className="text-xs uppercase tracking-widest text-on-surface-variant">(30 días)</p>
                             </div>
 
                             <div className="h-56 md:h-64">
@@ -255,13 +255,13 @@ export function InventoryActionModal({
                             </div>
                         </section>
 
-                        <section className="border border-outline-variant bg-surface-container-low p-4">
+                        {/* <section className="border border-outline-variant bg-surface-container-low p-4">
                             <div className="flex items-end justify-between gap-4 mb-3">
                                 <div>
                                     <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">Demanda</p>
                                     <h4 className="font-headline text-lg font-black tracking-tight uppercase">Consultas recientes</h4>
                                 </div>
-                                <p className="text-xs uppercase tracking-widest text-on-surface-variant">Mock</p>
+                                <p className="text-xs uppercase tracking-widest text-on-surface-variant">(30 días)</p>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -286,7 +286,7 @@ export function InventoryActionModal({
                                     </tbody>
                                 </table>
                             </div>
-                        </section>
+                        </section> */}
                     </div>
                 </div>
             </div>

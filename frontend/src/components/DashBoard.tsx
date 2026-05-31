@@ -77,10 +77,10 @@ function isAnalysisStale(date: Date | null): boolean {
 
 // --- DATA MOCK ORIGINAL ---
 const baseMetrics = [
-	{ label: 'Ventas del Mes', value: '$128.400', trend: '+12.8%' },
-	{ label: 'Interacciones del chatbot (mensual)', value: '86', trend: '+6.1%' },
-	{ label: 'SKUs en Riesgo Crítico', value: '8', trend: '+2.3%' },
-	{ label: 'Oportunidades de Arbitraje', value: '14', trend: '-8.4%' },
+	{ label: 'Ventas del Mes', value: '$128.400', trend: '' },
+	{ label: 'Interacciones del chatbot (mensual)', value: '86', trend: '' },
+	{ label: 'SKUs en Riesgo Crítico', value: '8', trend: '' },
+	{ label: 'Oportunidades de Arbitraje', value: '14', trend: '' },
 ];
 
 const opportunities = [
@@ -342,6 +342,9 @@ export const DashBoard = () => {
 		(currentPage - 1) * itemsPerPage,
 		currentPage * itemsPerPage,
 	);
+	const firstPages = Array.from({ length: Math.min(3, totalPages) }, (_, index) => index + 1);
+	const showEllipsis = totalPages > 4;
+	const showLastPage = totalPages > 3;
 
 	useEffect(() => {
 		if (currentPage > totalPages) {
@@ -429,7 +432,7 @@ export const DashBoard = () => {
 							</div>
 						</div>
 					);
-})()}
+				})()}
 				{predictiveError ? (
 					<p className="text-sm text-on-surface-variant mb-4">{predictiveError}</p>
 				) : null}
@@ -538,8 +541,7 @@ export const DashBoard = () => {
 							Anterior
 						</button>
 
-						{Array.from({ length: totalPages }, (_, index) => {
-							const pageNumber = index + 1;
+						{firstPages.map((pageNumber) => {
 							const isActive = pageNumber === currentPage;
 
 							return (
@@ -557,6 +559,34 @@ export const DashBoard = () => {
 								</button>
 							);
 						})}
+
+						{showEllipsis ? (
+							<span className="px-2 text-xs uppercase tracking-widest text-on-surface-variant">...</span>
+						) : null}
+
+						{showLastPage ? (() => {
+							const pageNumber = totalPages;
+							const isActive = pageNumber === currentPage;
+
+							if (firstPages.includes(pageNumber)) {
+								return null;
+							}
+
+							return (
+								<button
+									type="button"
+									key={pageNumber}
+									onClick={() => setCurrentPage(pageNumber)}
+									disabled={isPredictiveLoading || totalPages === 1}
+									className={`min-w-9 px-3 py-2 border text-xs uppercase tracking-widest font-semibold transition-colors ${isActive
+										? 'border-primary bg-primary-container/20 text-primary'
+										: 'border-outline-variant text-on-surface hover:border-primary/70 hover:text-primary'
+										}`}
+								>
+									{pageNumber}
+								</button>
+							);
+						})() : null}
 
 						<button
 							type="button"

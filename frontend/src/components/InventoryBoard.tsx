@@ -1,26 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { inventoryService, type InventoryApiItem } from "../../services/inventory.service";
+import {
+    inventoryService,
+    type InventoryApiItem,
+    type InventoryHistoryPoint,
+} from "../../services/inventory.service";
 import { InventoryItemModal, type InventoryItem } from "./InventoryItemModal";
-
-function generateStockHistory30d(producto: string, currentStock: number) {
-    const seed = producto.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    let value = Math.max(0, currentStock + ((seed % 7) - 3));
-    const volatility = 1 + (seed % 3);
-
-    const series: number[] = [];
-    for (let i = 0; i < 30; i += 1) {
-        const wave = Math.sin((i / 7) * Math.PI * 2) * volatility;
-        const shock = ((seed + i * 13) % 5) - 2;
-        value = Math.max(0, Math.round(value + wave + shock * 0.15));
-        series.push(value);
-    }
-
-    // Asegura que el último punto refleje el stock actual (mock pero consistente)
-    series[series.length - 1] = Math.max(0, currentStock);
-    return series;
-}
 
 export const InventoryBoard = () => {
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -90,10 +76,52 @@ export const InventoryBoard = () => {
         });
     }, [inventoryItems]);
 
-    const historialStock30d = useMemo(() => {
-        if (!selectedItem) return [];
-        return generateStockHistory30d(selectedItem.producto, Math.max(0, selectedItem.stock));
+    const [history, setHistory] = useState<InventoryHistoryPoint[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!selectedItem) {
+            setHistory([]);
+            setHistoryError(null);
+            setHistoryLoading(false);
+            return;
+        }
+
+        let isMounted = true;
+        setHistoryLoading(true);
+        setHistoryError(null);
+
+        inventoryService
+            .getInventoryHistory30d(selectedItem.sku)
+            .then((points) => {
+                if (isMounted) setHistory(points);
+            })
+            .catch((caughtError: unknown) => {
+                if (!isMounted) return;
+                const message = caughtError instanceof Error
+                    ? caughtError.message
+                    : "No se pudo cargar el histórico";
+                setHistoryError(message);
+                setHistory([]);
+            })
+            .finally(() => {
+                if (isMounted) setHistoryLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, [selectedItem]);
+
+    const historialStock30d = useMemo(
+        () => history.map((point) => point.stock ?? 0),
+        [history],
+    );
+    const historialLabels30d = useMemo(
+        () => history.map((point) => point.dia),
+        [history],
+    );
 
     return (
         <section className="space-y-8">
@@ -140,11 +168,11 @@ export const InventoryBoard = () => {
                                         className="border-t border-outline-variant/60 cursor-pointer hover:bg-surface-container-highest/40 transition-colors"
                                         role="button"
                                         tabIndex={0}
-                                        onClick={() => setSelectedItem({ producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado })}
+                                        onClick={() => setSelectedItem({ sku: item.key, producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado })}
                                         onKeyDown={(event) => {
                                             if (event.key === "Enter" || event.key === " ") {
                                                 event.preventDefault();
-                                                setSelectedItem({ producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado });
+                                                setSelectedItem({ sku: item.key, producto: item.producto, categoria: item.categoria, stock: item.stock, estado: item.estado });
                                             }
                                         }}
                                     >
@@ -165,6 +193,9 @@ export const InventoryBoard = () => {
                     isOpen={Boolean(selectedItem)}
                     item={selectedItem}
                     historialStock30d={historialStock30d}
+                    historialLabels30d={historialLabels30d}
+                    historialLoading={historyLoading}
+                    historialError={historyError}
                     onClose={() => setSelectedItem(null)}
                 />
             )}

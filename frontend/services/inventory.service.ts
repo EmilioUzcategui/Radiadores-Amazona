@@ -39,6 +39,23 @@ type InventoryResponse = {
     };
 };
 
+export type InventoryHistoryPoint = {
+    dia: string;
+    stock: number | null;
+};
+
+export type InventoryHistory = {
+    sku: string;
+    days: number;
+    points: InventoryHistoryPoint[];
+};
+
+type InventoryHistoryResponse = {
+    success: boolean;
+    message: string;
+    data: InventoryHistory;
+};
+
 const getErrorMessage = (error: unknown, fallbackMessage: string) => {
     if (
         typeof error === "object" &&
@@ -65,6 +82,24 @@ export const inventoryService = {
         } catch (error: unknown) {
             console.error("Error al cargar inventario:", error);
             throw new Error(getErrorMessage(error, "No se pudo cargar el inventario"));
+        }
+    },
+
+    async getInventoryHistory30d(sku: string): Promise<InventoryHistoryPoint[]> {
+        try {
+            const response = await api.get<InventoryHistoryResponse>(
+                `/api/inventory/${encodeURIComponent(sku)}/history`,
+                { params: { days: 30 } },
+            );
+
+            if (!response.data?.success) {
+                throw new Error(response.data?.message || "No se pudo cargar el histórico");
+            }
+
+            return response.data.data?.points ?? [];
+        } catch (error: unknown) {
+            console.error("Error al cargar histórico de inventario:", error);
+            throw new Error(getErrorMessage(error, "No se pudo cargar el histórico de inventario"));
         }
     },
 };
