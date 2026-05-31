@@ -224,3 +224,5 @@
   --chat--footer--background: var(--color-surface-container-low);
   --chat--footer--color: var(--color-on-surface);
 }
+
+/* SweetAlert2 custom styles are imported by the Swal wrapper to guarantee ordering */

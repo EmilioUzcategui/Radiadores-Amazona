@@ -1,0 +1,80 @@
+/* Tema personalizado para SweetAlert2 usando variables de la UI del proyecto */
+.swal2-popup {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.swal2-title {
+  color: var(--color-on-surface);
+  font-family: var(--font-headline);
+  font-weight: 600;
+}
+
+.swal2-content {
+  color: var(--color-on-surface);
+}
+
+.swal2-close {
+  color: var(--color-on-surface);
+}
+
+/* Botones */
+.swal2-actions .swal2-confirm {
+  background: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  box-shadow: none !important;
+}
+
+.swal2-actions .swal2-deny,
+.swal2-actions .swal2-cancel {
+  background: var(--color-surface-bright) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline-variant) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.4rem 0.9rem !important;
+}
+
+.swal2-actions .swal2-styled:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255,138,0,0.12);
+}
+
+/* Íconos */
+.swal2-icon {
+  border: none;
+}
+
+.swal2-icon.swal2-success {
+  background: transparent !important;
+  color: var(--color-primary) !important;
+}
+
+.swal2-icon.swal2-error {
+  background: transparent !important;
+  color: var(--color-error) !important;
+}
+
+.swal2-progress-steps .swal2-progress-step.swal2-active-step {
+  background: var(--color-primary) !important;
+}
+
+/* Inputs */
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
+  background: var(--color-surface-container-high) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline-variant) !important;
+}
+
+/* Ajustes responsivos y de tamaño */
+.swal2-popup.swal2-toast {
+  background: var(--color-surface) !important;
+}

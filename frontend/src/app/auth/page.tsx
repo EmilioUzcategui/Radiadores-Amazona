@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import Swal from "sweetalert2";
+import Swal from "../../lib/swal";
 import { useRouter } from "next/navigation";
 import { usersService } from "../../../services/auth/users.service";
 import { useAuthStore } from "@/store/authStore";

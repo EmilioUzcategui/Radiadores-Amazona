@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import Swal from "sweetalert2";
+import Swal from "../../../../lib/swal";
 import { PasswordInput } from "@/components/PasswordInput";
 import { usersService } from "../../../../../services/auth/users.service";
 
