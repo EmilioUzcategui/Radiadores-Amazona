@@ -126,7 +126,7 @@ export const ClientsBoard = () => {
 
             <section className="border border-outline-variant bg-surface-container-low overflow-hidden">
                 <div className="px-5 md:px-6 py-4 border-b border-outline-variant space-y-4">
-                    <h2 className="font-headline text-2xl font-black tracking-tighter uppercase">Resumen de Metricas</h2>
+                    <h2 className="font-headline text-2xl font-black tracking-tighter uppercase">Resumen de Métricas</h2>
                     {summaryError ? (
                         <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant">
                             {summaryError}
@@ -134,15 +134,15 @@ export const ClientsBoard = () => {
                     ) : null}
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         <div className="border border-outline-variant/70 bg-surface-container p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Producto mas preguntado</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Producto más preguntado</p>
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.productoMas}</p>
                         </div>
                         <div className="border border-outline-variant/70 bg-surface-container p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Categoria mas preguntada</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Categoría más preguntada</p>
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.categoriaMas}</p>
                         </div>
                         <div className="border border-outline-variant/70 bg-surface-container p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Hora con mas trafico</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Hora con más tráfico</p>
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.horaMas}</p>
                         </div>
 
@@ -151,13 +151,13 @@ export const ClientsBoard = () => {
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.productoMenos}</p>
                         </div>
                         <div className="border border-outline-variant/70 bg-surface-container p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Categoria menos preguntada</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Categoría menos preguntada</p>
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.categoriaMenos}</p>
                         </div>
 
 
                         <div className="border border-outline-variant/70 bg-surface-container p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Hora con menos trafico</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant">Hora con menos tráfico</p>
                             <p className="font-headline text-lg font-semibold text-on-surface mt-2">{metrics.horaMenos}</p>
                         </div>
                     </div>
@@ -199,7 +199,7 @@ export const ClientsBoard = () => {
                         </table>
                         <div className="flex flex-wrap items-center justify-between gap-3 px-5 md:px-6 py-4 border-t border-outline-variant">
                             <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant">
-                                Pagina {page} de {totalPages}
+                                Página {page} de {totalPages}
                             </p>
                             <div className="flex items-center gap-2">
                                 <button

@@ -46,7 +46,7 @@ const menuItems: MenuItem[] = [
     },
     {
         key: "settings",
-        label: "Configuracion",
+        label: "Configuración",
         description: "Preferencias del sistema",
         icon: (
             <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4">
@@ -85,7 +85,7 @@ const menuItems: MenuItem[] = [
     },
     {
         key: "logout",
-        label: "Cerrar sesion",
+        label: "Cerrar sesión",
         description: "Salir del panel",
         danger: true,
         icon: (
