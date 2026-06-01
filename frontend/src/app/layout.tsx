@@ -4,6 +4,7 @@ import "@n8n/chat/style.css";
 import "./globals.css";
 import { AppNavBar } from "../components/AppNavBar";
 import { ThemeInitializer } from "../components/ThemeInitializer";
+import AutoLogout from "../components/AutoLogout";
 
 // 1. Configuramos la fuente Inter (para los textos generales)
 const inter = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
         className="bg-surface text-on-surface font-body overflow-x-hidden antialiased"
       >
         <ThemeInitializer />
+        <AutoLogout inactivityMs={30000} confirmTimeoutMs={15000} />
         <AppNavBar />
 
         {/* Aquí es donde Next.js inserta el contenido de page.tsx */}
