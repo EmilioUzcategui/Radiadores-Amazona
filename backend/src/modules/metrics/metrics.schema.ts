@@ -29,3 +29,8 @@ export type ChatHistory = {
 export type ConversationalMetricWithHistory = ConversationalMetric & {
 	chat_history: ChatHistory | null;
 };
+
+export type ProductQuestionRanking = {
+	producto: string;
+	total_preguntas: number;
+};

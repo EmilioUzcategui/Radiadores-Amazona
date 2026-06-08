@@ -20,6 +20,11 @@ export type DashboardSummaryMetrics = {
 	hora_menos_trafico: string | null;
 };
 
+export type ProductQuestionsRankingItem = {
+	producto_mencionado: string;
+	total_preguntas: number;
+};
+
 const parseJsonMessage = (value: DbChatHistoryRow["message"]):
 	| Record<string, unknown>
 	| null => {
@@ -202,6 +207,23 @@ export const getChatbotInteractionsCountModel = async (): Promise<number> => {
 	`);
 
 	return Number(result.rows[0]?.total ?? 0);
+};
+
+export const getProductsRankedByQuestionsModel = async (): Promise<ProductQuestionsRankingItem[]> => {
+	const result = await query(`
+		SELECT
+			producto_mencionado,
+			COUNT(*)::int AS total_preguntas
+		FROM metricas_conversacionales
+		WHERE producto_mencionado IS NOT NULL
+		GROUP BY producto_mencionado
+		ORDER BY total_preguntas DESC, producto_mencionado ASC
+	`);
+
+	return result.rows.map((row) => ({
+		producto_mencionado: String(row.producto_mencionado),
+		total_preguntas: Number(row.total_preguntas ?? 0),
+	}));
 };
 
 type InventoryKpis = {

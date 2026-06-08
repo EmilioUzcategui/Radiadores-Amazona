@@ -78,32 +78,9 @@ export const HeroSection = () => {
                             Diseñamos y fabricamos radiadores únicamente para vehículos: livianos, pesados y maquinaria móvil.
                             Ingeniería térmica de precisión para rutas exigentes en clima amazónico.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-6">
-                            <button
-                                className="thermal-gradient text-on-primary-container px-10 py-5 font-headline font-black text-lg tracking-tighter uppercase transition-transform hover:-translate-y-1">
-                                Cotizar para mi Vehículo
-                            </button>
-                            <button
-                                className="border border-outline px-10 py-5 font-headline font-black text-lg tracking-tighter uppercase hover:bg-white/5 transition-colors">
-                                Ver Catálogo Vehicular
-                            </button>
-                        </div>
+
                     </div>
-                    <div
-                        className="lg:col-span-4 hidden lg:flex flex-col justify-end space-y-8 border-l border-surface-bright pl-8">
-                        <div>
-                            <span className="block text-primary font-headline text-4xl font-black">2.5k+</span>
-                            <span className="text-on-surface-variant text-xs tracking-widest uppercase">Vehículos Atendidos</span>
-                        </div>
-                        <div>
-                            <span className="block text-primary font-headline text-4xl font-black">+30</span>
-                            <span className="text-on-surface-variant text-xs tracking-widest uppercase">Modelos Vehiculares</span>
-                        </div>
-                        <div>
-                            <span className="block text-primary font-headline text-4xl font-black">24/7</span>
-                            <span className="text-on-surface-variant text-xs tracking-widest uppercase">Soporte Técnico</span>
-                        </div>
-                    </div>
+
                 </div>
             </header>
 

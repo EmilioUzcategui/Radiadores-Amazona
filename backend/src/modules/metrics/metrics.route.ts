@@ -4,6 +4,7 @@ import {
     getDashboardSummaryMetrics,
     getInventoryKpis,
     getMonthlySales,
+    getProductsRankedByQuestions,
     listConversationalMetrics,
 } from "./metrics.controller";
 
@@ -14,5 +15,6 @@ metricsRouter.get("/summary", getDashboardSummaryMetrics);
 metricsRouter.get("/chatbot-interactions", getChatbotInteractionsCount);
 metricsRouter.get("/inventory-kpis", getInventoryKpis);
 metricsRouter.get("/monthly-sales", getMonthlySales);
+metricsRouter.get("/products-ranking", getProductsRankedByQuestions);
 
 export default metricsRouter;

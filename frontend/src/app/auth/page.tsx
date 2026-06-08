@@ -36,19 +36,44 @@ const Login = () => {
     const router = useRouter();
 
     const onRequestRecoveryCode = async () => {
-        if (!formData.email) {
-            await Swal.fire({
-                title: "Correo requerido",
-                text: "Escribe tu correo para enviarte el código de recuperación.",
+        let email = formData.email.trim();
+
+        // Si el usuario no escribió su correo en el login, lo pedimos en la propia alerta.
+        if (!email) {
+            const { value, isConfirmed } = await Swal.fire({
+                title: "Recuperar contraseña",
+                text: "Ingresa tu correo y te enviaremos el código de recuperación.",
                 icon: "info",
-                confirmButtonText: "Entendido",
+                input: "email",
+                inputPlaceholder: "tucorreo@ejemplo.com",
+                showCancelButton: true,
+                confirmButtonText: "Enviar código",
+                cancelButtonText: "Cancelar",
+                inputValidator: (value) => {
+                    const correo = value.trim();
+                    if (!correo) {
+                        return "Escribe tu correo para continuar.";
+                    }
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(correo)) {
+                        return "Ingresa un correo válido.";
+                    }
+                    return undefined;
+                },
             });
-            return;
+
+            if (!isConfirmed || !value) {
+                return;
+            }
+
+            email = value.trim();
+            // Reflejamos el correo ingresado en el formulario del login.
+            setFormData((prevState) => ({ ...prevState, email }));
         }
 
         try {
             setIsSubmitting(true);
-            const response = await usersService.requestPasswordRecoveryCode(formData.email);
+            const response = await usersService.requestPasswordRecoveryCode(email);
 
             if (!response.success) {
                 throw new Error(response.message || "No fue posible enviar el código");
@@ -56,15 +81,15 @@ const Login = () => {
 
             await Swal.fire({
                 title: "Código enviado",
-                text: `Revisa tu correo ${formData.email} para continuar con la recuperación.`,
+                text: `Revisa tu correo ${email} para continuar con la recuperación.`,
                 icon: "success",
                 confirmButtonText: "Continuar",
             });
 
             const expiresAt = response.data?.expiresAt;
             const recoveryUrl = expiresAt
-                ? `/auth/recovery-password?email=${encodeURIComponent(formData.email)}&expiresAt=${encodeURIComponent(expiresAt)}`
-                : `/auth/recovery-password?email=${encodeURIComponent(formData.email)}`;
+                ? `/auth/recovery-password?email=${encodeURIComponent(email)}&expiresAt=${encodeURIComponent(expiresAt)}`
+                : `/auth/recovery-password?email=${encodeURIComponent(email)}`;
 
             router.push(recoveryUrl);
         } catch (error) {

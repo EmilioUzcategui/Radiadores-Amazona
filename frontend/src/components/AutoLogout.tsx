@@ -12,6 +12,7 @@ interface Props {
 
 export default function AutoLogout({ inactivityMs = 30000, confirmTimeoutMs = 15000 }: Props) {
   const logout = useAuthStore((s) => s.setLogout);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const router = useRouter();
 
   const inactivityTimer = useRef<number | null>(null);
@@ -71,6 +72,9 @@ export default function AutoLogout({ inactivityMs = 30000, confirmTimeoutMs = 15
   }, [startInactivityTimer]);
 
   useEffect(() => {
+    // Solo controlamos la inactividad cuando hay una sesión iniciada.
+    if (!isAuthenticated) return;
+
     const events = ["mousemove", "keydown", "click", "touchstart"];
     events.forEach((ev) => window.addEventListener(ev, resetTimer));
     startInactivityTimer();
@@ -79,8 +83,10 @@ export default function AutoLogout({ inactivityMs = 30000, confirmTimeoutMs = 15
       events.forEach((ev) => window.removeEventListener(ev, resetTimer));
       clearRef(inactivityTimer);
       clearRef(confirmTimer);
+      // Cerramos el modal "¿Sigues ahí?" si quedó abierto al cerrar sesión.
+      Swal.close();
     };
-  }, [resetTimer, startInactivityTimer]);
+  }, [isAuthenticated, resetTimer, startInactivityTimer]);
 
   return null;
 }

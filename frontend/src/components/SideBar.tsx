@@ -9,6 +9,7 @@ export const SideBar = () => {
 	const links = [
 		{ href: '/dashboard', label: 'Métricas' },
 		{ href: '/dashboard/inventario', label: 'Inventario' },
+		{ href: '/dashboard/sitios-web', label: 'Sitios Web' },
 		{ href: '/dashboard/clientes', label: 'chats' },
 	];
 

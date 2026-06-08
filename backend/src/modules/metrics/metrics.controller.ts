@@ -6,6 +6,7 @@ import {
 	getDashboardSummaryMetricsModel,
 	getInventoryKpisModel,
 	getMonthlySalesModel,
+	getProductsRankedByQuestionsModel,
 } from "./metrics.model";
 import { getConversationalMetricsQuerySchema } from "./metrics.schema";
 
@@ -99,6 +100,25 @@ export const getInventoryKpis = async (_req: Request, res: Response) => {
 		return res.status(500).json({
 			success: false,
 			message: "No se pudieron obtener los KPIs de inventario",
+		});
+	}
+};
+
+export const getProductsRankedByQuestions = async (_req: Request, res: Response) => {
+	try {
+		const data = await getProductsRankedByQuestionsModel();
+
+		return res.status(200).json({
+			success: true,
+			message: "Productos ordenados por preguntas obtenidos correctamente",
+			data,
+		});
+	} catch (error) {
+		console.error("[metrics.controller] Error fetching products ranked by questions:", error);
+
+		return res.status(500).json({
+			success: false,
+			message: "No se pudieron obtener los productos ordenados por preguntas",
 		});
 	}
 };
