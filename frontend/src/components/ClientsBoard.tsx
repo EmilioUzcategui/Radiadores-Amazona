@@ -105,13 +105,17 @@ export const ClientsBoard = () => {
         return normalizedChats.slice(start, start + pageSize);
     }, [page, normalizedChats]);
 
+    const metricPlaceholder = isLoading ? "Cargando..." : "No hay datos";
+    const pickMetric = (value?: string | null) =>
+        typeof value === "string" && value.trim() ? value : metricPlaceholder;
+
     const metrics = {
-        productoMas: summary?.producto_mas_preguntado ?? "Cargando...",
-        categoriaMas: summary?.categoria_mas_preguntada ?? "Cargando...",
-        productoMenos: summary?.radiador_menos_preguntado ?? "Cargando...",
-        categoriaMenos: summary?.categoria_menos_preguntada ?? "Cargando...",
-        horaMas: summary?.hora_mas_trafico ?? "Cargando...",
-        horaMenos: summary?.hora_menos_trafico ?? "Cargando...",
+        productoMas: pickMetric(summary?.producto_mas_preguntado),
+        categoriaMas: pickMetric(summary?.categoria_mas_preguntada),
+        productoMenos: pickMetric(summary?.radiador_menos_preguntado),
+        categoriaMenos: pickMetric(summary?.categoria_menos_preguntada),
+        horaMas: pickMetric(summary?.hora_mas_trafico),
+        horaMenos: pickMetric(summary?.hora_menos_trafico),
     };
 
     return (

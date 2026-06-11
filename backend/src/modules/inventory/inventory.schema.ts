@@ -44,6 +44,24 @@ export type InventoryHistoryResponse = {
     points: InventoryHistoryPoint[];
 };
 
+export type CompetitorPricePoint = {
+    dia: string;
+    precio: number | null;
+};
+
+// Una serie por fuente/competidor (Made in China, Alibaba, …).
+export type CompetitorPriceSeries = {
+    fuente: string;
+    points: CompetitorPricePoint[];
+};
+
+export type CompetitorPriceHistoryResponse = {
+    sku: string;
+    days: number;
+    fuentes: string[];
+    series: CompetitorPriceSeries[];
+};
+
 export type PredictiveInventoryMetrics = {
     sku: string;
     metricas: {

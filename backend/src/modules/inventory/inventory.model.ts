@@ -1,5 +1,8 @@
 import { query } from "../../config/database/db";
 import type {
+    CompetitorPriceHistoryResponse,
+    CompetitorPricePoint,
+    CompetitorPriceSeries,
     InventoryHistoryPoint,
     InventoryHistoryResponse,
     InventoryItem,
@@ -169,6 +172,90 @@ export const getInventoryHistoryModel = async (
     }));
 
     return { sku, days, points };
+};
+
+type DbCompetitorPriceRow = {
+    dia: string | Date;
+    fuente?: string | null;
+    sitio_origen?: string | null;
+    precio: number | string | null;
+};
+
+// La tabla `radiadores_scrapped_vectors` vive en otra base de datos (Neon) que el
+// backend no alcanza directamente. n8n sí la consulta, así que delegamos en un
+// webhook de n8n que ejecuta el SQL (agrupando por día y fuente/sitio_origen, con
+// generate_series para rellenar días sin scraping) y nos devuelve filas en formato
+// largo { dia, fuente, precio }. El backend reenvía sku/days y pivotea esas filas a
+// una serie por competidor.
+const N8N_COMPETITOR_PRICES_URL = process.env.N8N_COMPETITOR_PRICES_URL;
+
+// La respuesta del webhook puede llegar como array directo de filas o envuelta
+// (p. ej. { data: [...] } o { rows: [...] }). Extraemos el array en cualquier caso.
+const extractRows = (payload: unknown): DbCompetitorPriceRow[] => {
+    if (Array.isArray(payload)) {
+        return payload as DbCompetitorPriceRow[];
+    }
+    if (payload && typeof payload === "object") {
+        const record = payload as Record<string, unknown>;
+        for (const key of ["data", "rows", "points", "result"]) {
+            if (Array.isArray(record[key])) {
+                return record[key] as DbCompetitorPriceRow[];
+            }
+        }
+    }
+    return [];
+};
+
+export const getCompetitorPriceHistoryModel = async (
+    sku: string,
+    days: number,
+): Promise<CompetitorPriceHistoryResponse> => {
+    if (!N8N_COMPETITOR_PRICES_URL) {
+        throw new Error("N8N_COMPETITOR_PRICES_URL no está configurada");
+    }
+
+    const url = new URL(N8N_COMPETITOR_PRICES_URL);
+    url.searchParams.set("sku", sku);
+    url.searchParams.set("days", String(days));
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+        throw new Error(`El webhook de n8n respondió con estado ${response.status}`);
+    }
+
+    const payload = (await response.json()) as unknown;
+    const rows = extractRows(payload);
+
+    // Pivot formato largo { dia, fuente, precio } -> una serie por fuente,
+    // preservando el orden en que llegan (la SQL las ordena por fuente y día).
+    const seriesByFuente = new Map<string, CompetitorPricePoint[]>();
+    const fuentes: string[] = [];
+
+    for (const row of rows) {
+        const fuente = (row.fuente ?? row.sitio_origen ?? "Desconocido") || "Desconocido";
+        const precio = parseOptionalNumber(row.precio);
+        const point: CompetitorPricePoint = {
+            dia: row.dia instanceof Date ? row.dia.toISOString().slice(0, 10) : String(row.dia).slice(0, 10),
+            precio: precio === null ? null : Number(precio.toFixed(2)),
+        };
+
+        if (!seriesByFuente.has(fuente)) {
+            seriesByFuente.set(fuente, []);
+            fuentes.push(fuente);
+        }
+        seriesByFuente.get(fuente)!.push(point);
+    }
+
+    const series: CompetitorPriceSeries[] = fuentes.map((fuente) => ({
+        fuente,
+        points: seriesByFuente.get(fuente) ?? [],
+    }));
+
+    return { sku, days, fuentes, series };
 };
 
 const mapPredictiveRow = (row: DbPredictiveRow): PredictiveInventoryMetrics => {

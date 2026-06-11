@@ -102,6 +102,16 @@ export const WebsitesBoard = () => {
 		if (!site) return;
 		const nuevoActivo = !site.activo;
 
+		// Debe quedar siempre al menos un sitio activo: no permitir desactivar el último.
+		if (!nuevoActivo && previous.filter((item) => item.activo).length <= 1) {
+			RaSwal.fire({
+				icon: 'warning',
+				title: 'No se puede desactivar',
+				text: 'Debe haber al menos un sitio web activo para el flujo de scraping.',
+			});
+			return;
+		}
+
 		setWebsites((prev) =>
 			prev.map((item) => (item.id === id ? { ...item, activo: nuevoActivo } : item)),
 		);

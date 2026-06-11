@@ -39,7 +39,7 @@ export default function RootLayout({
         className="bg-surface text-on-surface font-body overflow-x-hidden antialiased"
       >
         <ThemeInitializer />
-        <AutoLogout inactivityMs={30000} confirmTimeoutMs={15000} />
+        <AutoLogout inactivityMs={300000} confirmTimeoutMs={15000} />
         <AppNavBar />
 
         {/* Aquí es donde Next.js inserta el contenido de page.tsx */}

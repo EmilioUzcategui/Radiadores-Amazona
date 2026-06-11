@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { metricsService, type PredictiveInventoryItem } from '../../services/auth/metrics.service';
-import { InventoryActionModal, type InventoryDrillDownDetails } from './InventoryActionModal';
+import { inventoryService } from '../../services/inventory.service';
+import { InventoryActionModal, type CompetitorSeries, type InventoryDrillDownDetails } from './InventoryActionModal';
 
 type PredictiveItem = PredictiveInventoryItem;
 
@@ -12,19 +13,6 @@ type InquiryRow = {
 	canal: string;
 	cantidad?: number;
 };
-
-function generateCompetitorPricesUSD30d(sku: string) {
-	const seed = sku.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-	const base = 80 + (seed % 70);
-	const volatility = 2 + (seed % 4);
-
-	return Array.from({ length: 30 }, (_, index) => {
-		const weekWave = Math.sin((index / 7) * Math.PI * 2) * volatility;
-		const drift = (index - 15) * 0.05;
-		const value = base + weekWave + drift;
-		return Number(value.toFixed(2));
-	});
-}
 
 const inquiriesMockBySku: Record<string, InquiryRow[]> = {
 	'RAD-TOY-001': [
@@ -47,9 +35,12 @@ const inquiriesMockBySku: Record<string, InquiryRow[]> = {
 	],
 };
 
-function getInventoryDrillDownDetails(sku: string): InventoryDrillDownDetails {
+function getInventoryDrillDownDetails(
+	sku: string,
+	seriesCompetencia: CompetitorSeries[],
+): InventoryDrillDownDetails {
 	return {
-		precioCompetenciaUSD30d: generateCompetitorPricesUSD30d(sku),
+		seriesCompetencia,
 		consultasClientes: inquiriesMockBySku[sku] ?? [
 			{ fecha: '2026-04-28', cliente: 'Cliente demo', canal: 'Web', cantidad: 1 },
 		],
@@ -119,12 +110,14 @@ const customerSegmentation = {
 };
 
 const resumenEjecutivoFallback =
-	"El portafolio presenta una necesidad crítica de reposición para el SKU RAD-TOY-001, con una excelente oportunidad de arbitraje que justifica la importación inmediata.";
+	"No se pudo generar el resumen ejecutivo predictivo. Por favor, revise los datos de inventario y las recomendaciones de acción para obtener insights detallados sobre oportunidades de arbitraje, niveles de urgencia y estrategias de reposición.";
 
 export const DashBoard = () => {
 	const itemsPerPage = 3;
 	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedItem, setSelectedItem] = useState<PredictiveItem | null>(null);
+	const [competitorSeries, setCompetitorSeries] = useState<CompetitorSeries[]>([]);
+	const [isCompetitorPricesLoading, setIsCompetitorPricesLoading] = useState(false);
 	const [predictiveItems, setPredictiveItems] = useState<PredictiveItem[]>([]);
 	const [predictiveSummary, setPredictiveSummary] = useState<string | null>(null);
 	const [predictiveError, setPredictiveError] = useState<string | null>(null);
@@ -139,6 +132,44 @@ export const DashBoard = () => {
 		arbitrage_opportunities: number;
 	} | null>(null);
 	const [inventoryKpisError, setInventoryKpisError] = useState<string | null>(null);
+	const [searchTerm, setSearchTerm] = useState('');
+	const [urgenciaFilter, setUrgenciaFilter] = useState('TODAS');
+	const [rentabilidadFilter, setRentabilidadFilter] = useState('TODAS');
+
+	// Carga la serie real de precios de la competencia (último mes) al abrir el drill-down.
+	useEffect(() => {
+		if (!selectedItem) return;
+
+		let isMounted = true;
+		const sku = selectedItem.sku;
+
+		setIsCompetitorPricesLoading(true);
+		setCompetitorSeries([]);
+
+		inventoryService
+			.getCompetitorPrices30d(sku)
+			.then((series) => {
+				if (isMounted) {
+					setCompetitorSeries(
+						series.map((serie) => ({
+							fuente: serie.fuente,
+							precios: serie.points.map((point) => point.precio),
+						})),
+					);
+				}
+			})
+			.catch((error) => {
+				console.error('Error al cargar precios de la competencia:', error);
+				if (isMounted) setCompetitorSeries([]);
+			})
+			.finally(() => {
+				if (isMounted) setIsCompetitorPricesLoading(false);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [selectedItem]);
 
 	const formatCurrency = (value: number) => {
 		const formatted = new Intl.NumberFormat('es-VE', { maximumFractionDigits: 0 }).format(value);
@@ -337,8 +368,69 @@ export const DashBoard = () => {
 		return metric;
 	});
 
-	const totalPages = Math.max(1, Math.ceil(predictiveItems.length / itemsPerPage));
-	const paginatedPredictiveData = predictiveItems.slice(
+	// Opciones de filtro derivadas de los propios datos (evita hardcodear niveles).
+	const urgenciaOptions = useMemo(() => {
+		const set = new Set<string>();
+		predictiveItems.forEach((item) => {
+			if (item.metricas.nivel_urgencia) set.add(item.metricas.nivel_urgencia);
+		});
+		return Array.from(set).sort();
+	}, [predictiveItems]);
+
+	const rentabilidadOptions = useMemo(() => {
+		const set = new Set<string>();
+		predictiveItems.forEach((item) => {
+			if (item.metricas.indice_rentabilidad_importacion) {
+				set.add(item.metricas.indice_rentabilidad_importacion);
+			}
+		});
+		return Array.from(set).sort();
+	}, [predictiveItems]);
+
+	const filteredPredictiveItems = useMemo(() => {
+		const term = searchTerm.trim().toLowerCase();
+		return predictiveItems.filter((item) => {
+			if (urgenciaFilter !== 'TODAS' && item.metricas.nivel_urgencia !== urgenciaFilter) {
+				return false;
+			}
+			if (
+				rentabilidadFilter !== 'TODAS' &&
+				item.metricas.indice_rentabilidad_importacion !== rentabilidadFilter
+			) {
+				return false;
+			}
+			if (term) {
+				const haystack = [
+					item.sku,
+					item.recomendacion.accion_sugerida,
+					item.recomendacion.razonamiento_comercial,
+					item.metricas.alerta_competitividad,
+				]
+					.filter(Boolean)
+					.join(' ')
+					.toLowerCase();
+				if (!haystack.includes(term)) return false;
+			}
+			return true;
+		});
+	}, [predictiveItems, searchTerm, urgenciaFilter, rentabilidadFilter]);
+
+	const hasActiveFilters =
+		searchTerm.trim() !== '' || urgenciaFilter !== 'TODAS' || rentabilidadFilter !== 'TODAS';
+
+	const clearFilters = () => {
+		setSearchTerm('');
+		setUrgenciaFilter('TODAS');
+		setRentabilidadFilter('TODAS');
+	};
+
+	// Al cambiar cualquier filtro volvemos a la primera página de resultados.
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [searchTerm, urgenciaFilter, rentabilidadFilter]);
+
+	const totalPages = Math.max(1, Math.ceil(filteredPredictiveItems.length / itemsPerPage));
+	const paginatedPredictiveData = filteredPredictiveItems.slice(
 		(currentPage - 1) * itemsPerPage,
 		currentPage * itemsPerPage,
 	);
@@ -413,6 +505,76 @@ export const DashBoard = () => {
 				<div className="mb-4">
 					<h2 className="font-headline text-2xl font-black tracking-tighter uppercase">Plan de Acción de Inventario</h2>
 				</div>
+				{/* BÚSQUEDA Y FILTROS */}
+				<div className="mb-4 border border-outline-variant bg-surface-container-low p-4">
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+						<div className="flex-1">
+							<label htmlFor="plan-busqueda" className="block text-[11px] uppercase tracking-widest text-on-surface-variant mb-1">
+								Buscar
+							</label>
+							<input
+								id="plan-busqueda"
+								type="text"
+								value={searchTerm}
+								onChange={(event) => setSearchTerm(event.target.value)}
+								placeholder="SKU, acción o razonamiento…"
+								className="w-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+							/>
+						</div>
+
+						<div>
+							<label htmlFor="plan-urgencia" className="block text-[11px] uppercase tracking-widest text-on-surface-variant mb-1">
+								Urgencia
+							</label>
+							<select
+								id="plan-urgencia"
+								value={urgenciaFilter}
+								onChange={(event) => setUrgenciaFilter(event.target.value)}
+								className="w-full lg:w-44 border border-outline-variant bg-surface-container px-3 py-2 text-sm uppercase tracking-wider font-semibold text-on-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+							>
+								<option value="TODAS">Todas</option>
+								{urgenciaOptions.map((option) => (
+									<option key={option} value={option}>{option}</option>
+								))}
+							</select>
+						</div>
+
+						<div>
+							<label htmlFor="plan-rentabilidad" className="block text-[11px] uppercase tracking-widest text-on-surface-variant mb-1">
+								Rentabilidad
+							</label>
+							<select
+								id="plan-rentabilidad"
+								value={rentabilidadFilter}
+								onChange={(event) => setRentabilidadFilter(event.target.value)}
+								className="w-full lg:w-44 border border-outline-variant bg-surface-container px-3 py-2 text-sm uppercase tracking-wider font-semibold text-on-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+							>
+								<option value="TODAS">Todas</option>
+								{rentabilidadOptions.map((option) => (
+									<option key={option} value={option}>{option}</option>
+								))}
+							</select>
+						</div>
+
+						{hasActiveFilters && (
+							<button
+								type="button"
+								onClick={clearFilters}
+								className="px-3 py-2 border border-outline-variant text-xs uppercase tracking-widest font-semibold text-on-surface hover:border-primary/70 hover:text-primary transition-colors"
+							>
+								Limpiar
+							</button>
+						)}
+					</div>
+
+					{!isPredictiveLoading && (
+						<p className="text-xs text-on-surface-variant mt-3">
+							Mostrando <span className="font-semibold text-on-surface">{filteredPredictiveItems.length}</span> de{' '}
+							<span className="font-semibold text-on-surface">{predictiveItems.length}</span> planes
+						</p>
+					)}
+				</div>
+
 				{!isPredictiveLoading && predictiveItems.length > 0 && (() => {
 					const latestDate = getLatestAnalysisDate(predictiveItems);
 					if (!isAnalysisStale(latestDate) || !latestDate) return null;
@@ -439,7 +601,11 @@ export const DashBoard = () => {
 				{isPredictiveLoading ? (
 					<p className="text-sm text-on-surface-variant">Cargando predicciones...</p>
 				) : paginatedPredictiveData.length === 0 ? (
-					<p className="text-sm text-on-surface-variant">No hay predicciones registradas.</p>
+					<p className="text-sm text-on-surface-variant">
+						{predictiveItems.length === 0
+							? 'No hay predicciones registradas.'
+							: 'No se encontraron planes con los filtros aplicados.'}
+					</p>
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
 						{paginatedPredictiveData.map((item) => {
@@ -611,7 +777,8 @@ export const DashBoard = () => {
 					accionSugerida={selectedItem.recomendacion.accion_sugerida ?? 'SIN ACCIÓN'}
 					cantidadSugerida={selectedItem.recomendacion.cantidad_sugerida_comprar ?? 0}
 					razonamiento={selectedItem.recomendacion.razonamiento_comercial ?? 'Sin detalles'}
-					detalles={getInventoryDrillDownDetails(selectedItem.sku)}
+					detalles={getInventoryDrillDownDetails(selectedItem.sku, competitorSeries)}
+					preciosLoading={isCompetitorPricesLoading}
 					onClose={() => setSelectedItem(null)}
 				/>
 			)}

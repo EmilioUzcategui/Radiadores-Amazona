@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+    getCompetitorPriceHistoryModel,
     getInventoryHistoryModel,
     getInventoryModel,
     getPredictiveInventoryModel,
@@ -52,6 +53,38 @@ export const getInventoryHistory = async (req: Request, res: Response) => {
         return res.status(500).json({
             success: false,
             message: "No se pudo obtener el histórico de inventario",
+        });
+    }
+};
+
+export const getCompetitorPriceHistory = async (req: Request, res: Response) => {
+    const rawSku = Array.isArray(req.params.sku) ? req.params.sku[0] : req.params.sku;
+    const sku = rawSku?.trim();
+
+    if (!sku) {
+        return res.status(400).json({
+            success: false,
+            message: "El SKU del producto es requerido",
+        });
+    }
+
+    const parsedDays = Number.parseInt(String(req.query.days ?? "30"), 10);
+    const days = Number.isFinite(parsedDays) ? Math.min(Math.max(parsedDays, 1), 365) : 30;
+
+    try {
+        const data = await getCompetitorPriceHistoryModel(sku, days);
+
+        return res.status(200).json({
+            success: true,
+            message: "Precios de la competencia obtenidos correctamente",
+            data,
+        });
+    } catch (error) {
+        console.error("[inventory.controller] Error fetching competitor prices:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "No se pudieron obtener los precios de la competencia",
         });
     }
 };

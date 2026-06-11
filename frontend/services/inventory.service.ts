@@ -50,6 +50,29 @@ export type InventoryHistory = {
     points: InventoryHistoryPoint[];
 };
 
+export type CompetitorPricePoint = {
+    dia: string;
+    precio: number | null;
+};
+
+export type CompetitorPriceSeries = {
+    fuente: string;
+    points: CompetitorPricePoint[];
+};
+
+export type CompetitorPriceHistory = {
+    sku: string;
+    days: number;
+    fuentes: string[];
+    series: CompetitorPriceSeries[];
+};
+
+type CompetitorPriceHistoryResponse = {
+    success: boolean;
+    message: string;
+    data: CompetitorPriceHistory;
+};
+
 type InventoryHistoryResponse = {
     success: boolean;
     message: string;
@@ -100,6 +123,24 @@ export const inventoryService = {
         } catch (error: unknown) {
             console.error("Error al cargar histórico de inventario:", error);
             throw new Error(getErrorMessage(error, "No se pudo cargar el histórico de inventario"));
+        }
+    },
+
+    async getCompetitorPrices30d(sku: string): Promise<CompetitorPriceSeries[]> {
+        try {
+            const response = await api.get<CompetitorPriceHistoryResponse>(
+                `/api/inventory/${encodeURIComponent(sku)}/competitor-prices`,
+                { params: { days: 30 } },
+            );
+
+            if (!response.data?.success) {
+                throw new Error(response.data?.message || "No se pudieron cargar los precios de la competencia");
+            }
+
+            return response.data.data?.series ?? [];
+        } catch (error: unknown) {
+            console.error("Error al cargar precios de la competencia:", error);
+            throw new Error(getErrorMessage(error, "No se pudieron cargar los precios de la competencia"));
         }
     },
 };

@@ -24,10 +24,20 @@ type Inquiry = {
     cantidad?: number;
 };
 
+// Una serie de precios por competidor/fuente (Made in China, Alibaba, …).
+// `precios` puede contener null en los días sin scraping (huecos en la serie).
+export type CompetitorSeries = {
+    fuente: string;
+    precios: (number | null)[];
+};
+
 export type InventoryDrillDownDetails = {
-    precioCompetenciaUSD30d: number[];
+    seriesCompetencia: CompetitorSeries[];
     consultasClientes: Inquiry[];
 };
+
+// Paleta para diferenciar cada fuente en la gráfica (la primera usa el color primario del tema).
+const SERIES_PALETTE = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#a855f7', '#ec4899'];
 
 // 1. ACTUALIZAMOS LOS PROPS PARA RECIBIR LAS NUEVAS MÉTRICAS
 type Props = {
@@ -41,6 +51,7 @@ type Props = {
     cantidadSugerida: number;
     razonamiento: string;
     detalles: InventoryDrillDownDetails;
+    preciosLoading?: boolean;
     onClose: () => void;
 };
 
@@ -72,6 +83,7 @@ export function InventoryActionModal({
     cantidadSugerida,
     razonamiento,
     detalles,
+    preciosLoading = false,
     onClose
 }: Props) {
     const themeColors = useMemo(() => {
@@ -88,26 +100,43 @@ export function InventoryActionModal({
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [isOpen, onClose]);
 
-    const labels = useMemo(() => Array.from({ length: 30 }, (_, i) => `D${i + 1}`), []);
+    // La longitud de cada serie = nº de días; usamos la más larga para las etiquetas.
+    const labels = useMemo(() => {
+        const length = detalles.seriesCompetencia.reduce(
+            (max, serie) => Math.max(max, serie.precios.length),
+            0,
+        ) || 30;
+        return Array.from({ length }, (_, i) => `D${i + 1}`);
+    }, [detalles.seriesCompetencia]);
+
+    // ¿Hay al menos un precio real en alguna fuente? (todo puede venir vacío o en null)
+    const hasPriceData = useMemo(
+        () => detalles.seriesCompetencia.some((serie) => serie.precios.some((value) => value !== null)),
+        [detalles.seriesCompetencia],
+    );
 
     const chartData: ChartData<'line'> | null = useMemo(() => {
         if (!themeColors) return null;
 
+        const palette = [themeColors.primary, ...SERIES_PALETTE];
+
         return {
             labels,
-            datasets: [
-                {
-                    label: 'Precio competencia (USD)',
-                    data: detalles.precioCompetenciaUSD30d,
-                    borderColor: themeColors.primary,
-                    backgroundColor: 'transparent',
+            datasets: detalles.seriesCompetencia.map((serie, index) => {
+                const color = palette[index % palette.length];
+                return {
+                    label: serie.fuente,
+                    data: serie.precios,
+                    borderColor: color,
+                    backgroundColor: color,
                     tension: 0.35,
                     pointRadius: 2,
                     pointHoverRadius: 4,
-                },
-            ],
+                    spanGaps: true,
+                };
+            }),
         };
-    }, [detalles.precioCompetenciaUSD30d, labels, themeColors]);
+    }, [detalles.seriesCompetencia, labels, themeColors]);
 
     const chartOptions: ChartOptions<'line'> | null = useMemo(() => {
         if (!themeColors) return null;
@@ -117,7 +146,14 @@ export function InventoryActionModal({
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false,
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: themeColors.onSurfaceVariant,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        usePointStyle: true,
+                    },
                 },
                 tooltip: {
                     mode: 'index',
@@ -245,11 +281,16 @@ export function InventoryActionModal({
                             </div>
 
                             <div className="h-56 md:h-64">
-                                {chartData && chartOptions ? (
-                                    <Line data={chartData} options={chartOptions} />
-                                ) : (
+                                {preciosLoading || !chartData || !chartOptions ? (
                                     <div className="h-full border border-outline-variant bg-surface-container flex items-center justify-center">
                                         <p className="text-xs uppercase tracking-widest text-on-surface-variant">Cargando gráfico…</p>
+                                    </div>
+                                ) : hasPriceData ? (
+                                    <Line data={chartData} options={chartOptions} />
+                                ) : (
+                                    <div className="h-full border border-outline-variant bg-surface-container flex flex-col items-center justify-center gap-1 text-center px-4">
+                                        <p className="text-xs uppercase tracking-widest text-on-surface-variant">Sin datos de competencia</p>
+                                        <p className="text-[11px] text-on-surface-variant/70">Aún no se han scrapeado precios para este SKU en los últimos 30 días.</p>
                                     </div>
                                 )}
                             </div>
