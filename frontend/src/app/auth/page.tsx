@@ -177,11 +177,6 @@ const Login = () => {
                             </p>
                         </div>
 
-                        <div className="space-y-3 text-xs uppercase tracking-widest text-on-surface-variant">
-                            <p>Monitoreo comercial en tiempo real</p>
-                            <p>Gestión de oportunidades y clientes</p>
-                            <p>Reportes con métricas críticas</p>
-                        </div>
                     </div>
 
                     <div className="p-8 md:p-10 lg:p-12">

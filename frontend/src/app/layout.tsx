@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
-import "@n8n/chat/style.css";
+// import "@n8n/chat/style.css"; // chatbot n8n deshabilitado temporalmente
 import "./globals.css";
 import { AppNavBar } from "../components/AppNavBar";
 import { ThemeInitializer } from "../components/ThemeInitializer";

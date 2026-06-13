@@ -162,7 +162,7 @@ export const WebsitesBoard = () => {
 			<header className="border border-outline-variant bg-surface-container-low p-6 md:p-8">
 				<p className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant mb-3">Fuentes de Scraping</p>
 				<h1 className="font-headline text-4xl md:text-5xl font-black tracking-tighter uppercase">Sitios Web</h1>
-				<p className="text-on-surface-variant mt-4 max-w-2xl">
+				<p className="text-on-surface-variant mt-4 text-justify">
 					Selecciona y prioriza los sitios web que el flujo de n8n usará como fuente al momento de
 					scrappear precios y disponibilidad de la competencia. Los sitios activos con mayor prioridad
 					se consultan primero en cada ejecución.

@@ -453,10 +453,10 @@ export const DashBoard = () => {
 				<h1 className="font-headline text-4xl md:text-5xl font-black tracking-tighter uppercase">
 					Métricas predictivas de inventario para Radiadores Amazona
 				</h1>
-				<p className="text-on-surface-variant mt-4 max-w-2xl">
+				<p className="text-on-surface-variant mt-4 text-justify">
 					Este dashboard presenta un análisis predictivo avanzado del inventario de Radiadores Amazona, utilizando inteligencia artificial para identificar oportunidades de arbitraje, niveles de urgencia en reposición y recomendaciones de acción comercial. Las métricas se actualizan en tiempo real para reflejar las dinámicas del mercado y el comportamiento del cliente, permitiendo una toma de decisiones informada y estratégica.
 				</p>
-				<p className="text-on-surface-variant mt-2 max-w-2xl italic text-sm">
+				<p className="text-on-surface-variant mt-2 italic text-sm text-justify">
 					*Nota: Las recomendaciones de acción se basan en un análisis integral de datos históricos, tendencias de mercado y condiciones competitivas actuales.
 				</p>
 			</header>
@@ -618,6 +618,16 @@ export const DashBoard = () => {
 								? item.recomendacion.accion_sugerida.replace(/_/g, ' ')
 								: 'SIN ACCIÓN';
 							const cantidadSugerida = item.recomendacion.cantidad_sugerida_comprar ?? 0;
+							const fechaScrapeo = item.fecha_analisis
+								? new Date(item.fecha_analisis).toLocaleString('es-VE', {
+									day: '2-digit',
+									month: '2-digit',
+									year: 'numeric',
+									hour: '2-digit',
+									minute: '2-digit',
+									hour12: true,
+								})
+								: null;
 
 							return (
 								<button
@@ -685,6 +695,12 @@ export const DashBoard = () => {
 												{item.recomendacion.razonamiento_comercial}
 											</p>
 										</div>
+
+										{fechaScrapeo && (
+											<p className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mt-4 pt-3 border-t border-outline-variant/20">
+												Scrapeado el <span className="font-semibold text-on-surface">{fechaScrapeo}</span>
+											</p>
+										)}
 									</div>
 								</button>
 							);

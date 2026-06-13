@@ -1,14 +1,22 @@
 'use client';
 // App.tsx
-import { useEffect } from 'react';
-import '@n8n/chat/style.css';
-import { createChat } from '@n8n/chat';
 
-const N8N_CHAT_CONTAINER_ID = 'n8n-chat';
-const N8N_CHAT_WINDOW_KEY = '__raN8nChatInit__';
+/*
+ * NOTA: El chatbot de n8n se deshabilitó temporalmente.
+ * Se reemplazó por el componente <ChatbotWidget /> (ver components/ChatbotWidget.tsx),
+ * que por ahora es solo visual (no se conecta con n8n ni genera respuestas).
+ *
+ * import { useEffect } from 'react';
+ * import '@n8n/chat/style.css';
+ * import { createChat } from '@n8n/chat';
+ *
+ * const N8N_CHAT_CONTAINER_ID = 'n8n-chat';
+ * const N8N_CHAT_WINDOW_KEY = '__raN8nChatInit__';
+ */
 
 export const HeroSection = () => {
 
+    /*
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -54,6 +62,7 @@ export const HeroSection = () => {
             win[N8N_CHAT_WINDOW_KEY] = false;
         };
     }, []);
+    */
     return (
         <div>
             {/* Hero Section */}

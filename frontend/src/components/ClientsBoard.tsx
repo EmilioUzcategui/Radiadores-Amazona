@@ -81,7 +81,7 @@ export const ClientsBoard = () => {
             const date = chat.fecha_hora ? new Date(chat.fecha_hora) : null;
             const fecha = date ? date.toLocaleDateString("es-ES") : "--/--/----";
             const hora = date
-                ? date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false })
+                ? date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: true })
                 : "--:--";
             return {
                 id: chat.id,

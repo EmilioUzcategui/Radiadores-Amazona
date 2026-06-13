@@ -225,4 +225,25 @@
   --chat--footer--color: var(--color-on-surface);
 }
 
+/* Animaciones del ChatbotWidget (asesor virtual AMA) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes thermalSlide {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
 /* SweetAlert2 custom styles are imported by the Swal wrapper to guarantee ordering */
