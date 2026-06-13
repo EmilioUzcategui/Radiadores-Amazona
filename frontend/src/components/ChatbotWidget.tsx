@@ -131,6 +131,13 @@ export const ChatbotWidget = () => {
 			{/* ---------- Burbuja flotante (estado cerrado) ---------- */}
 			{!isOpen && (
 				<div className="flex items-center gap-3 animate-[fadeInUp_0.25s_ease-out]">
+					{/* Aquí agregamos la imagen. 
+            Ajusta los valores de 'top' y 'translate' según necesites */}
+					<img 
+						src="public\..\..\AvatarRA_sinfondo.png" 
+						alt="Asesor" 
+						className="absolute -top-19 h-24 w-auto pointer-events-none z-10"
+					/>
 					<button
 						type="button"
 						onClick={() => setIsOpen(true)}
